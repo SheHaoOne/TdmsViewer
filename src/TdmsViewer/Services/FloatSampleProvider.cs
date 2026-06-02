@@ -1,9 +1,10 @@
+using System;
 using NAudio.Wave;
 
 namespace TdmsViewer.Services;
 
 /// <summary>
-/// 从内存 float 样本缓冲提供音频，避免 WaveFileWriter 关闭 MemoryStream。
+/// 从内存 float 样本缓冲提供音频。
 /// </summary>
 internal sealed class FloatSampleProvider : ISampleProvider
 {
@@ -20,6 +21,8 @@ internal sealed class FloatSampleProvider : ISampleProvider
 
     public int Read(float[] buffer, int offset, int count)
     {
+        Array.Clear(buffer, offset, count);
+
         var available = _samples.Length - _position;
         if (available <= 0)
             return 0;

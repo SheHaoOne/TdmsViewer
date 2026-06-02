@@ -546,18 +546,83 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void PlayAudio()
     {
-        if (_currentChannelData == null || _activeSource == null)
+        if (SelectedChannel == null || ActiveFile == null)
+        {
+            MessageBox.Show("请先选择通道，并单击左侧文件名。", "播放音频", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
+        }
 
         try
         {
-            _audioService.PlayFromChannelData(_currentChannelData, _activeSource.Channel.SampleRateHz);
+            if (!TryEnsureChannelDataForPlayback(out var data, out var source))
+                return;
+
+            _audioService.PlayFromChannelData(data, source.Channel.SampleRateHz);
             IsPlaying = true;
-            StatusMessage = $"正在播放 {_activeSource.FileName} …";
+            StatusMessage = $"正在播放 {source.FileName} …";
         }
         catch (Exception ex)
         {
+            IsPlaying = false;
             MessageBox.Show($"播放失败：{ex.Message}", "音频", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+    }
+
+    private bool TryEnsureChannelDataForPlayback(out double[] data, out ChannelSourceRef source)
+    {
+        source = _activeSource
+                 ?? SelectedChannel!.Sources.FirstOrDefault(s =>
+                     string.Equals(s.FilePath, ActiveFile!.FilePath, StringComparison.OrdinalIgnoreCase))
+                 ?? SelectedChannel!.Sources[0];
+
+        if (!string.Equals(source.FilePath, ActiveFile!.FilePath, StringComparison.OrdinalIgnoreCase))
+        {
+            var match = SelectedChannel!.Sources.FirstOrDefault(s =>
+                string.Equals(s.FilePath, ActiveFile.FilePath, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+                source = match;
+        }
+
+        if (_currentChannelData != null &&
+            _activeSource != null &&
+            string.Equals(_activeSource.FilePath, source.FilePath, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(_activeSource.Channel.GroupName, source.Channel.GroupName, StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(_activeSource.Channel.ChannelName, source.Channel.ChannelName, StringComparison.OrdinalIgnoreCase)
+        {
+            data = _currentChannelData;
+            return data.Length > 0;
+        }
+
+        try
+        {
+            IsBusy = true;
+            StatusMessage = $"正在读取 {source.FileName} 用于播放…";
+            _activeSource = source;
+            _currentChannelData = _tdmsService.ReadChannelData(source.FilePath, source.Channel);
+            RefreshPropertyCards(source.Channel);
+            TotalSamples = _currentChannelData.Length;
+            TotalPages = Math.Max(1, (int)Math.Ceiling(TotalSamples / (double)PageSize));
+            CurrentPage = 0;
+            RefreshPage();
+            data = _currentChannelData;
+
+            if (data.Length == 0)
+            {
+                MessageBox.Show("当前通道没有可播放的数据。", "播放音频", MessageBoxButton.OK, MessageBoxImage.Information);
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"读取通道数据失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            data = Array.Empty<double>();
+            return false;
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

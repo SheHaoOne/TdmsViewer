@@ -1,12 +1,19 @@
+using System.ComponentModel;
 using System.IO;
+using System.Runtime.InteropServices;
+using NAudio;
 using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 
 namespace TdmsViewer.Services;
 
 public sealed class AudioService : IDisposable
 {
+    private const int MaxPlaybackSamples = 4_000_000;
+
     private WaveOutEvent? _player;
-    private ISampleProvider? _sampleProvider;
+    private AudioFileReader? _reader;
+    private string? _tempWavPath;
 
     public const int DefaultSampleRate = 44100;
 
@@ -14,34 +21,123 @@ public sealed class AudioService : IDisposable
     {
         Stop();
 
-        var rate = (int)Math.Clamp(sampleRateHz ?? DefaultSampleRate, 8000, 192000);
-        var samples = NormalizeToPcm16(data);
-        var format = WaveFormat.CreateIeeeFloatWaveFormat(rate, 1);
+        if (data.Length == 0)
+            throw new InvalidOperationException("通道数据为空，无法播放。");
 
-        _sampleProvider = new FloatSampleProvider(samples, format);
+        var rate = ResolveSampleRate(sampleRateHz);
+        var playbackSamples = BuildPlaybackSamples(data);
+
+        try
+        {
+            PlayViaWaveOut(playbackSamples, rate);
+        }
+        catch (Exception ex) when (IsDeviceError(ex))
+        {
+            PlayViaTempWavFile(playbackSamples, rate);
+        }
+    }
+
+    private void PlayViaWaveOut(float[] samples, int sampleRate)
+    {
+        var format = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, 1);
+        ISampleProvider sampleProvider = new FloatSampleProvider(samples, format);
+        IWaveProvider waveProvider = new SampleToWaveProvider16(sampleProvider);
+
         _player = new WaveOutEvent();
-        _player.Init(_sampleProvider);
+        _player.PlaybackStopped += OnPlaybackStopped;
+        _player.Init(waveProvider);
         _player.Play();
+    }
+
+    private void PlayViaTempWavFile(float[] samples, int sampleRate)
+    {
+        _tempWavPath = Path.Combine(Path.GetTempPath(), $"TdmsViewer_{Guid.NewGuid():N}.wav");
+        using (var writer = new WaveFileWriter(_tempWavPath, new WaveFormat(sampleRate, 16, 1)))
+            writer.WriteSamples(samples, 0, samples.Length);
+
+        _reader = new AudioFileReader(_tempWavPath);
+        _player = new WaveOutEvent();
+        _player.PlaybackStopped += OnPlaybackStopped;
+        _player.Init(_reader);
+        _player.Play();
+    }
+
+    private void OnPlaybackStopped(object? sender, StoppedEventArgs e)
+    {
+        if (sender is not WaveOutEvent player || player != _player)
+            return;
+
+        CleanupPlayback();
     }
 
     public void Stop()
     {
         _player?.Stop();
-        _player?.Dispose();
-        _player = null;
-        _sampleProvider = null;
+        CleanupPlayback();
+    }
+
+    private void CleanupPlayback()
+    {
+        if (_player != null)
+        {
+            _player.PlaybackStopped -= OnPlaybackStopped;
+            _player.Dispose();
+            _player = null;
+        }
+
+        _reader?.Dispose();
+        _reader = null;
+
+        if (_tempWavPath != null)
+        {
+            try
+            {
+                if (File.Exists(_tempWavPath))
+                    File.Delete(_tempWavPath);
+            }
+            catch
+            {
+                // ignore temp cleanup errors
+            }
+
+            _tempWavPath = null;
+        }
     }
 
     public void ExportWav(string filePath, double[] data, double? sampleRateHz)
     {
-        var rate = (int)Math.Clamp(sampleRateHz ?? DefaultSampleRate, 8000, 192000);
-        var normalized = NormalizeToPcm16(data);
+        var rate = ResolveSampleRate(sampleRateHz);
+        var samples = BuildPlaybackSamples(data);
 
         using var writer = new WaveFileWriter(filePath, new WaveFormat(rate, 16, 1));
-        writer.WriteSamples(normalized, 0, normalized.Length);
+        writer.WriteSamples(samples, 0, samples.Length);
     }
 
-    private static float[] NormalizeToPcm16(double[] data)
+    private static int ResolveSampleRate(double? sampleRateHz)
+    {
+        if (sampleRateHz is > 0 and <= 384_000)
+            return (int)Math.Round(sampleRateHz.Value);
+
+        return DefaultSampleRate;
+    }
+
+    private static float[] BuildPlaybackSamples(double[] data)
+    {
+        var working = data;
+
+        if (data.Length > MaxPlaybackSamples)
+        {
+            var step = (double)data.Length / MaxPlaybackSamples;
+            var down = new double[MaxPlaybackSamples];
+            for (var i = 0; i < down.Length; i++)
+                down[i] = data[(int)(i * step)];
+            working = down;
+        }
+
+        return NormalizeToFloat(working);
+    }
+
+    private static float[] NormalizeToFloat(double[] data)
     {
         if (data.Length == 0)
             return Array.Empty<float>();
@@ -51,8 +147,15 @@ public sealed class AudioService : IDisposable
             max = 1;
 
         var scale = (float)(0.95 / max);
-        return data.Select(v => (float)(v * scale)).ToArray();
+        var result = new float[data.Length];
+        for (var i = 0; i < data.Length; i++)
+            result[i] = (float)(data[i] * scale);
+
+        return result;
     }
+
+    private static bool IsDeviceError(Exception ex) =>
+        ex is InvalidOperationException or MmException or Win32Exception;
 
     public void Dispose() => Stop();
 }
