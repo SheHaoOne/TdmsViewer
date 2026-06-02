@@ -19,7 +19,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly AudioService _audioService = new();
 
     private readonly List<TdmsFileEntry> _loadedFiles = new();
+    private readonly List<WaveformSeries> _cachedOverlaySeries = new();
     private double[]? _currentChannelData;
+    private ChannelSourceRef? _activeSource;
+    private bool _suppressSelectAllSync;
 
     [ObservableProperty]
     private string _windowTitle = "TdmsViewer";
@@ -40,7 +43,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private MergedChannelInfo? _selectedChannel;
 
     [ObservableProperty]
-    private ChannelSourceRef? _selectedSource;
+    private TdmsFileListItem? _activeFile;
 
     [ObservableProperty]
     private int _currentPage;
@@ -57,8 +60,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isFileAssociationRegistered;
 
+    /// <summary>全选复选框：勾选则全部参与波形叠加，取消则全部不叠加。</summary>
     [ObservableProperty]
-    private bool _hasMultipleSources;
+    private bool _isAllFilesOverlayChecked = true;
 
     public string PageInfo => TotalPages <= 0 ? "—" : $"第 {CurrentPage + 1} / {TotalPages} 页";
 
@@ -66,9 +70,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnTotalPagesChanged(int value) => OnPropertyChanged(nameof(PageInfo));
 
+    partial void OnIsAllFilesOverlayCheckedChanged(bool value)
+    {
+        if (_suppressSelectAllSync)
+            return;
+
+        foreach (var file in LoadedFiles)
+            file.IsVisibleOnPlot = value;
+
+        ApplyOverlayVisibility();
+    }
+
     public ObservableCollection<TdmsFileListItem> LoadedFiles { get; } = new();
     public ObservableCollection<MergedChannelInfo> MergedChannels { get; } = new();
-    public ObservableCollection<ChannelSourceRef> AvailableSources { get; } = new();
     public ObservableCollection<ChannelPropertyCard> PropertyCards { get; } = new();
     public ObservableCollection<DataPageRow> PageRows { get; } = new();
     public ObservableCollection<WaveformSeries> WaveformSeries { get; } = new();
@@ -82,12 +96,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (value != null)
             _ = LoadMergedChannelAsync(value);
-    }
-
-    partial void OnSelectedSourceChanged(ChannelSourceRef? value)
-    {
-        if (value != null && SelectedChannel != null)
-            _ = LoadSourceDataAsync(value);
     }
 
     [RelayCommand]
@@ -113,9 +121,19 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (item == null)
             return;
 
+        UnsubscribeFileItem(item);
         _loadedFiles.RemoveAll(f => string.Equals(f.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase));
         RefreshFileListUi();
         RebuildMergedChannels(selectFirst: true);
+    }
+
+    [RelayCommand]
+    private void SelectFileForData(TdmsFileListItem? file)
+    {
+        if (file == null || SelectedChannel == null)
+            return;
+
+        SetActiveFile(file);
     }
 
     public void ImportFilesFromPaths(IEnumerable<string> paths, bool replaceSession = false) =>
@@ -145,7 +163,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var newEntries = await Task.Run(() => LoadFileEntries(pathList));
 
             if (replaceSession)
+            {
+                foreach (var item in LoadedFiles.ToList())
+                    UnsubscribeFileItem(item);
                 _loadedFiles.Clear();
+            }
 
             foreach (var entry in newEntries)
             {
@@ -162,9 +184,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             }
 
             RefreshFileListUi();
+            SyncSelectAllCheckbox();
             RebuildMergedChannels(selectFirst: SelectedChannel == null);
             WindowTitle = $"TdmsViewer — {_loadedFiles.Count} 个文件";
-            StatusMessage = $"已加载 {_loadedFiles.Count} 个文件，{MergedChannels.Count} 个通道（可叠加对比）";
+            StatusMessage = $"已加载 {_loadedFiles.Count} 个文件，{MergedChannels.Count} 个通道";
         }
         catch (Exception ex)
         {
@@ -240,16 +263,92 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void RefreshFileListUi()
     {
+        var overlayState = LoadedFiles.ToDictionary(
+            f => f.FilePath,
+            f => f.IsVisibleOnPlot,
+            StringComparer.OrdinalIgnoreCase);
+
+        var dataPath = ActiveFile?.FilePath
+                       ?? LoadedFiles.FirstOrDefault(f => f.IsSelectedForData)?.FilePath;
+
+        foreach (var item in LoadedFiles.ToList())
+            UnsubscribeFileItem(item);
+
         LoadedFiles.Clear();
+
         foreach (var f in _loadedFiles.OrderBy(f => f.FileName, StringComparer.OrdinalIgnoreCase))
         {
-            LoadedFiles.Add(new TdmsFileListItem
+            var item = new TdmsFileListItem
             {
                 FilePath = f.FilePath,
                 FileName = f.FileName,
-                ChannelCount = f.Channels.Count
-            });
+                ChannelCount = f.Channels.Count,
+                IsVisibleOnPlot = overlayState.GetValueOrDefault(f.FilePath, true),
+                IsSelectedForData = string.Equals(f.FilePath, dataPath, StringComparison.OrdinalIgnoreCase)
+            };
+            SubscribeFileItem(item);
+            LoadedFiles.Add(item);
         }
+
+        ActiveFile = LoadedFiles.FirstOrDefault(f => f.IsSelectedForData) ?? LoadedFiles.FirstOrDefault();
+        if (ActiveFile != null)
+            ActiveFile.IsSelectedForData = true;
+    }
+
+    private void SubscribeFileItem(TdmsFileListItem item)
+    {
+        item.PropertyChanged += OnFileItemPropertyChanged;
+    }
+
+    private void UnsubscribeFileItem(TdmsFileListItem item)
+    {
+        item.PropertyChanged -= OnFileItemPropertyChanged;
+    }
+
+    private void OnFileItemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (sender is not TdmsFileListItem item)
+            return;
+
+        if (e.PropertyName == nameof(TdmsFileListItem.IsVisibleOnPlot))
+        {
+            SyncSelectAllCheckbox();
+            ApplyOverlayVisibility();
+        }
+    }
+
+    private void SyncSelectAllCheckbox()
+    {
+        _suppressSelectAllSync = true;
+        IsAllFilesOverlayChecked = LoadedFiles.Count > 0 && LoadedFiles.All(f => f.IsVisibleOnPlot);
+        _suppressSelectAllSync = false;
+    }
+
+    private void SetActiveFile(TdmsFileListItem file)
+    {
+        foreach (var f in LoadedFiles)
+            f.IsSelectedForData = false;
+
+        file.IsSelectedForData = true;
+        ActiveFile = file;
+
+        if (SelectedChannel == null)
+            return;
+
+        var source = SelectedChannel.Sources.FirstOrDefault(s =>
+            string.Equals(s.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase));
+
+        if (source == null)
+        {
+            StatusMessage = $"{file.FileName} 中不含当前通道";
+            PropertyCards.Clear();
+            PageRows.Clear();
+            _currentChannelData = null;
+            _activeSource = null;
+            return;
+        }
+
+        _ = LoadSourceDataAsync(source);
     }
 
     private async Task LoadMergedChannelAsync(MergedChannelInfo merged)
@@ -257,27 +356,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
         try
         {
             IsBusy = true;
-            StatusMessage = $"正在叠加通道 {merged.DisplayName}（{merged.SourceCount} 个文件）…";
+            StatusMessage = $"正在加载通道 {merged.DisplayName}…";
 
-            AvailableSources.Clear();
-            foreach (var src in merged.Sources)
-                AvailableSources.Add(src);
-
-            HasMultipleSources = merged.SourceCount > 1;
-
+            _cachedOverlaySeries.Clear();
             var seriesList = await Task.Run(() => BuildOverlaySeries(merged));
-            WaveformSeries.Clear();
-            foreach (var s in seriesList)
-                WaveformSeries.Add(s);
+            _cachedOverlaySeries.AddRange(seriesList);
 
-            var previousPath = SelectedSource?.FilePath;
-            SelectedSource = merged.Sources.FirstOrDefault(s =>
-                                 string.Equals(s.FilePath, previousPath, StringComparison.OrdinalIgnoreCase))
-                             ?? merged.Sources[0];
+            ApplyOverlayVisibility();
 
-            StatusMessage = merged.SourceCount > 1
-                ? $"已叠加 {merged.SourceCount} 条波形 — {merged.DisplayName}"
-                : $"通道 {merged.DisplayName} — 单文件";
+            var dataFile = ActiveFile != null &&
+                           merged.Sources.Any(s => string.Equals(s.FilePath, ActiveFile.FilePath, StringComparison.OrdinalIgnoreCase))
+                ? ActiveFile
+                : LoadedFiles.FirstOrDefault(f =>
+                      merged.Sources.Any(s => string.Equals(s.FilePath, f.FilePath, StringComparison.OrdinalIgnoreCase)));
+
+            if (dataFile != null)
+                SetActiveFile(dataFile);
+
+            var visibleCount = LoadedFiles.Count(f => f.IsVisibleOnPlot);
+            StatusMessage = $"通道 {merged.DisplayName} — 叠加 {visibleCount} / {merged.SourceCount} 条波形";
         }
         catch (Exception ex)
         {
@@ -299,6 +396,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var points = _tdmsService.BuildWaveform(data, src.Channel.SampleRateHz);
             result.Add(new WaveformSeries
             {
+                FilePath = src.FilePath,
                 Label = src.FileName,
                 Color = PlotColorPalette.GetColor(i),
                 Points = points
@@ -308,6 +406,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
         return result;
     }
 
+    private void ApplyOverlayVisibility()
+    {
+        var visiblePaths = LoadedFiles
+            .Where(f => f.IsVisibleOnPlot)
+            .Select(f => f.FilePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        WaveformSeries.Clear();
+        foreach (var series in _cachedOverlaySeries.Where(s => visiblePaths.Contains(s.FilePath)))
+            WaveformSeries.Add(series);
+
+        if (SelectedChannel != null)
+        {
+            var visibleCount = WaveformSeries.Count;
+            StatusMessage = $"通道 {SelectedChannel.DisplayName} — 叠加 {visibleCount} 条波形";
+        }
+    }
+
     private async Task LoadSourceDataAsync(ChannelSourceRef source)
     {
         try
@@ -315,6 +431,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             IsBusy = true;
             StatusMessage = $"正在读取 {source.FileName} …";
 
+            _activeSource = source;
             _currentChannelData = await Task.Run(() =>
                 _tdmsService.ReadChannelData(source.FilePath, source.Channel));
 
@@ -325,7 +442,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshPropertyCards(source.Channel);
             RefreshPage();
 
-            StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点";
+            StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点（单击文件名切换）";
         }
         catch (Exception ex)
         {
@@ -357,23 +474,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ClearDetailPanels()
     {
         WaveformSeries.Clear();
+        _cachedOverlaySeries.Clear();
         PropertyCards.Clear();
         PageRows.Clear();
-        AvailableSources.Clear();
         _currentChannelData = null;
-        HasMultipleSources = false;
+        _activeSource = null;
     }
 
     private void ResetSession()
     {
+        foreach (var item in LoadedFiles.ToList())
+            UnsubscribeFileItem(item);
+
         _loadedFiles.Clear();
         LoadedFiles.Clear();
         MergedChannels.Clear();
         ClearDetailPanels();
         SelectedChannel = null;
-        SelectedSource = null;
+        ActiveFile = null;
         HasFile = false;
         SessionSummary = null;
+        IsAllFilesOverlayChecked = true;
         WindowTitle = "TdmsViewer";
         StatusMessage = "请批量导入 TDMS 文件进行对比";
     }
@@ -413,14 +534,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void PlayAudio()
     {
-        if (_currentChannelData == null || SelectedSource == null)
+        if (_currentChannelData == null || _activeSource == null)
             return;
 
         try
         {
-            _audioService.PlayFromChannelData(_currentChannelData, SelectedSource.Channel.SampleRateHz);
+            _audioService.PlayFromChannelData(_currentChannelData, _activeSource.Channel.SampleRateHz);
             IsPlaying = true;
-            StatusMessage = $"正在播放 {SelectedSource.FileName} …";
+            StatusMessage = $"正在播放 {_activeSource.FileName} …";
         }
         catch (Exception ex)
         {
@@ -439,13 +560,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ExportAudio()
     {
-        if (_currentChannelData == null || SelectedSource == null)
+        if (_currentChannelData == null || _activeSource == null)
             return;
 
         var dialog = new SaveFileDialog
         {
             Filter = "WAV 音频 (*.wav)|*.wav",
-            FileName = $"{SelectedSource.Channel.ChannelName}_{SelectedSource.FileName}.wav",
+            FileName = $"{_activeSource.Channel.ChannelName}_{_activeSource.FileName}.wav",
             Title = "导出音频"
         };
 
@@ -454,7 +575,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            _audioService.ExportWav(dialog.FileName, _currentChannelData, SelectedSource.Channel.SampleRateHz);
+            _audioService.ExportWav(dialog.FileName, _currentChannelData, _activeSource.Channel.SampleRateHz);
             StatusMessage = $"已导出 {dialog.FileName}";
             MessageBox.Show("音频导出成功。", "导出", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -500,11 +621,4 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     public void Dispose() => _audioService.Dispose();
-}
-
-public sealed class TdmsFileListItem
-{
-    public required string FilePath { get; init; }
-    public required string FileName { get; init; }
-    public int ChannelCount { get; init; }
 }

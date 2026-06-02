@@ -29,6 +29,7 @@ public sealed class MergedChannelInfo
 
 public sealed class WaveformSeries
 {
+    public required string FilePath { get; init; }
     public required string Label { get; init; }
     public required string Color { get; init; }
     public IReadOnlyList<WaveformPoint> Points { get; init; } = Array.Empty<WaveformPoint>();
