@@ -46,10 +46,10 @@ dotnet publish src/TdmsViewer/TdmsViewer.csproj -c Release -r win-x64 --self-con
 .\scripts\Register-TdmsAssociation.ps1 -ExePath "C:\path\to\TdmsViewer.exe"
 ```
 
-**方式三**：命令行传入文件：
+**方式三**：命令行传入一个或多个文件：
 
 ```text
-TdmsViewer.exe "D:\data\sample.tdms"
+TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 ```
 
 ## 技术栈
