@@ -18,25 +18,21 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
         <conv:HexColorToBrushConverter x:Key="HexToBrush"/>
 
-        <Style x:Key="FileNameLinkButtonStyle" TargetType="Button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="FontWeight" Value="Medium"/>
-            <Setter Property="Foreground" Value="{StaticResource MacTextPrimaryBrush}"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
+        <Style x:Key="MacFileNameTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacBodyStyle}">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
             <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Foreground" Value="{StaticResource MacAccentBrush}"/>
-                </Trigger>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter Property="Foreground" Value="White"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MacFileMetaTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacSecondaryStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                    <Setter Property="Foreground" Value="#CCFFFFFF"/>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
 
@@ -67,51 +63,39 @@
         </DataTemplate>
 
         <DataTemplate x:Key="FileListItemTemplate" DataType="{x:Type vm:TdmsFileListItem}">
-            <Border Padding="8,6" CornerRadius="8" Margin="0,2">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsSelectedForData}" Value="True">
-                                <Setter Property="Background" Value="#FFE8E8ED"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <CheckBox Grid.Column="0"
-                              IsChecked="{Binding IsVisibleOnPlot, Mode=TwoWay}"
-                              VerticalAlignment="Center"
-                              Margin="0,0,8,0"
-                              ToolTip="参与波形叠加"/>
-                    <StackPanel Grid.Column="1">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Width="22" Height="3" CornerRadius="1.5"
-                                    VerticalAlignment="Center" Margin="0,0,8,0"
-                                    Background="{Binding PlotColor, Converter={StaticResource HexToBrush}}"
-                                    ToolTip="波形线条颜色"/>
-                            <Button Style="{StaticResource FileNameLinkButtonStyle}"
-                                    Content="{Binding FileName}"
-                                    Command="{Binding DataContext.SelectFileForDataCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    CommandParameter="{Binding}"/>
-                        </StackPanel>
-                        <TextBlock Style="{StaticResource MacSecondaryStyle}" Margin="0,2,0,0">
-                            <Run Text="{Binding ChannelCount, Mode=OneWay}"/>
-                            <Run Text=" 个通道"/>
-                        </TextBlock>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Column="0"
+                          Style="{StaticResource MacCheckBoxStyle}"
+                          IsChecked="{Binding IsVisibleOnPlot, Mode=TwoWay}"
+                          VerticalAlignment="Top"
+                          Margin="0,2,10,0"
+                          ToolTip="参与波形叠加"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Border Width="24" Height="3" CornerRadius="1.5"
+                                VerticalAlignment="Center" Margin="0,0,8,0"
+                                Background="{Binding PlotColor, Converter={StaticResource HexToBrush}}"
+                                ToolTip="波形线条颜色"/>
+                        <TextBlock Text="{Binding FileName}" Style="{StaticResource MacFileNameTextStyle}"/>
                     </StackPanel>
-                    <Button Grid.Column="2" Content="×" Padding="6,2" Margin="4,0,0,0"
-                            Style="{StaticResource MacToolbarButtonStyle}"
-                            Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            CommandParameter="{Binding}"
-                            ToolTip="移除此文件"/>
-                </Grid>
-            </Border>
+                    <TextBlock Margin="32,0,0,0" Style="{StaticResource MacFileMetaTextStyle}">
+                        <Run Text="{Binding ChannelCount, Mode=OneWay}"/>
+                        <Run Text=" 个通道"/>
+                    </TextBlock>
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Content="×"
+                        Style="{StaticResource MacIconButtonStyle}"
+                        VerticalAlignment="Center"
+                        Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding}"
+                        ToolTip="移除此文件"/>
+            </Grid>
         </DataTemplate>
     </Window.Resources>
 
@@ -164,23 +148,33 @@
 
                 <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,0,0,6">
                     <DockPanel>
-                        <Grid DockPanel.Dock="Top" Margin="8,8,8,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="已导入文件" Style="{StaticResource MacCaptionStyle}" VerticalAlignment="Center"/>
-                            <CheckBox Grid.Column="1"
-                                      Content="全选"
-                                      IsChecked="{Binding IsAllFilesOverlayChecked, Mode=TwoWay}"
-                                      VerticalAlignment="Center"
-                                      ToolTip="勾选：全部参与波形叠加；取消：全部不叠加"/>
-                        </Grid>
+                        <Border DockPanel.Dock="Top"
+                                Margin="4,4,4,8"
+                                Padding="8,8,8,10"
+                                BorderBrush="{StaticResource MacSeparatorBrush}"
+                                BorderThickness="0,0,0,0.5">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="已导入文件" Style="{StaticResource MacCaptionStyle}" VerticalAlignment="Center"/>
+                                <CheckBox Grid.Column="1"
+                                          Style="{StaticResource MacCheckBoxStyle}"
+                                          Content="全选叠加"
+                                          IsChecked="{Binding IsAllFilesOverlayChecked, Mode=TwoWay}"
+                                          VerticalAlignment="Center"
+                                          ToolTip="勾选：全部参与波形叠加；取消：全部不叠加"/>
+                            </Grid>
+                        </Border>
                         <ListBox ItemsSource="{Binding LoadedFiles}"
+                                 SelectedItem="{Binding ActiveFile, Mode=TwoWay}"
                                  ItemTemplate="{StaticResource FileListItemTemplate}"
+                                 ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}"
                                  BorderThickness="0"
                                  Background="Transparent"
-                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                     </DockPanel>
                 </Border>
 

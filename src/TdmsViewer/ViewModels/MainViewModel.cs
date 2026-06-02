@@ -98,6 +98,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             _ = LoadMergedChannelAsync(value);
     }
 
+    partial void OnActiveFileChanged(TdmsFileListItem? value)
+    {
+        if (value != null && SelectedChannel != null)
+            LoadActiveFileData(value);
+    }
+
     [RelayCommand]
     private void BatchImport()
     {
@@ -125,15 +131,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _loadedFiles.RemoveAll(f => string.Equals(f.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase));
         RefreshFileListUi();
         RebuildMergedChannels(selectFirst: true);
-    }
-
-    [RelayCommand]
-    private void SelectFileForData(TdmsFileListItem? file)
-    {
-        if (file == null || SelectedChannel == null)
-            return;
-
-        SetActiveFile(file);
     }
 
     public void ImportFilesFromPaths(IEnumerable<string> paths, bool replaceSession = false) =>
@@ -268,8 +265,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             f => f.IsVisibleOnPlot,
             StringComparer.OrdinalIgnoreCase);
 
-        var dataPath = ActiveFile?.FilePath
-                       ?? LoadedFiles.FirstOrDefault(f => f.IsSelectedForData)?.FilePath;
+        var previousDataPath = ActiveFile?.FilePath;
 
         foreach (var item in LoadedFiles.ToList())
             UnsubscribeFileItem(item);
@@ -283,18 +279,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 FilePath = f.FilePath,
                 FileName = f.FileName,
                 ChannelCount = f.Channels.Count,
-                IsVisibleOnPlot = overlayState.GetValueOrDefault(f.FilePath, true),
-                IsSelectedForData = string.Equals(f.FilePath, dataPath, StringComparison.OrdinalIgnoreCase)
+                IsVisibleOnPlot = overlayState.GetValueOrDefault(f.FilePath, true)
             };
             SubscribeFileItem(item);
             LoadedFiles.Add(item);
         }
 
-        ActiveFile = LoadedFiles.FirstOrDefault(f => f.IsSelectedForData) ?? LoadedFiles.FirstOrDefault();
-        if (ActiveFile != null)
-            ActiveFile.IsSelectedForData = true;
-
         UpdateFilePlotColors();
+
+        ActiveFile = LoadedFiles.FirstOrDefault(f =>
+                         string.Equals(f.FilePath, previousDataPath, StringComparison.OrdinalIgnoreCase))
+                     ?? LoadedFiles.FirstOrDefault();
     }
 
     private void UpdateFilePlotColors()
@@ -339,14 +334,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressSelectAllSync = false;
     }
 
-    private void SetActiveFile(TdmsFileListItem file)
+    private void SetActiveFile(TdmsFileListItem file) => ActiveFile = file;
+
+    private void LoadActiveFileData(TdmsFileListItem file)
     {
-        foreach (var f in LoadedFiles)
-            f.IsSelectedForData = false;
-
-        file.IsSelectedForData = true;
-        ActiveFile = file;
-
         if (SelectedChannel == null)
             return;
 
