@@ -17,4 +17,6 @@ public static class PlotColorPalette
     ];
 
     public static string GetColor(int index) => Colors[index % Colors.Length];
+
+    public static string GetColorForFileIndex(int fileIndex) => GetColor(Math.Max(0, fileIndex));
 }

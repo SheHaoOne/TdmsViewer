@@ -16,6 +16,7 @@
     <Window.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
         <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
+        <conv:HexColorToBrushConverter x:Key="HexToBrush"/>
 
         <Style x:Key="FileNameLinkButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -89,10 +90,16 @@
                               Margin="0,0,8,0"
                               ToolTip="参与波形叠加"/>
                     <StackPanel Grid.Column="1">
-                        <Button Style="{StaticResource FileNameLinkButtonStyle}"
-                                Content="{Binding FileName}"
-                                Command="{Binding DataContext.SelectFileForDataCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                CommandParameter="{Binding}"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Border Width="22" Height="3" CornerRadius="1.5"
+                                    VerticalAlignment="Center" Margin="0,0,8,0"
+                                    Background="{Binding PlotColor, Converter={StaticResource HexToBrush}}"
+                                    ToolTip="波形线条颜色"/>
+                            <Button Style="{StaticResource FileNameLinkButtonStyle}"
+                                    Content="{Binding FileName}"
+                                    Command="{Binding DataContext.SelectFileForDataCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"/>
+                        </StackPanel>
                         <TextBlock Style="{StaticResource MacSecondaryStyle}" Margin="0,2,0,0">
                             <Run Text="{Binding ChannelCount, Mode=OneWay}"/>
                             <Run Text=" 个通道"/>
@@ -203,52 +210,71 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <controls:WaveformControl Margin="0,20,0,0" Series="{Binding WaveformSeries}" MinHeight="280"/>
+                    <!-- Waveform (left) + Data (right) -->
+                    <Grid Margin="0,20,0,0" MinHeight="400">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="12"/>
+                            <ColumnDefinition Width="Auto" MinWidth="280" MaxWidth="520"/>
+                        </Grid.ColumnDefinitions>
+
+                        <controls:WaveformControl Grid.Column="0"
+                                                  Series="{Binding WaveformSeries}"
+                                                  MinHeight="400"
+                                                  VerticalAlignment="Stretch"/>
+
+                        <Border Grid.Column="2"
+                                Style="{StaticResource MacCardStyle}"
+                                Padding="0"
+                                HorizontalAlignment="Stretch"
+                                VerticalAlignment="Stretch"
+                                MinWidth="280">
+                            <DockPanel LastChildFill="True">
+                                <Grid DockPanel.Dock="Top" Margin="12,12,12,8">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="通道数据" Style="{StaticResource MacCaptionStyle}"/>
+                                        <TextBlock Margin="8,0,0,0" Style="{StaticResource MacSecondaryStyle}"
+                                                   TextTrimming="CharacterEllipsis" MaxWidth="200">
+                                            <Run Text="— "/>
+                                            <Run Text="{Binding ActiveFile.FileName, Mode=OneWay, TargetNullValue='未选择'}"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <WrapPanel Grid.Row="1" Margin="0,8,0,0" HorizontalAlignment="Right">
+                                        <Button Content="首页" Style="{StaticResource MacToolbarButtonStyle}" Padding="8,5" Margin="0,0,4,0" Command="{Binding FirstPageCommand}"/>
+                                        <Button Content="上页" Style="{StaticResource MacToolbarButtonStyle}" Padding="8,5" Margin="0,0,4,0" Command="{Binding PreviousPageCommand}"/>
+                                        <TextBlock VerticalAlignment="Center" Margin="4,0"
+                                                   Text="{Binding PageInfo}" Style="{StaticResource MacSecondaryStyle}"/>
+                                        <Button Content="下页" Style="{StaticResource MacToolbarButtonStyle}" Padding="8,5" Margin="4,0,4,0" Command="{Binding NextPageCommand}"/>
+                                        <Button Content="末页" Style="{StaticResource MacToolbarButtonStyle}" Padding="8,5" Command="{Binding LastPageCommand}"/>
+                                    </WrapPanel>
+                                </Grid>
+
+                                <DataGrid ItemsSource="{Binding PageRows}"
+                                          AutoGenerateColumns="False"
+                                          IsReadOnly="True"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          SelectionMode="Single"
+                                          Margin="8,0,8,12"
+                                          MinHeight="320"
+                                          MaxHeight="520"
+                                          HorizontalAlignment="Stretch">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="索引" Binding="{Binding Index}" Width="Auto"/>
+                                        <DataGridTextColumn Header="数值" Binding="{Binding FormattedValue}" Width="Auto"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
 
                     <TextBlock Margin="0,8,0,0" Style="{StaticResource MacSecondaryStyle}"
-                               Text="勾选文件参与波形叠加；单击文件名查看该文件的属性与数据"
+                               Text="勾选文件参与波形叠加；单击文件名查看属性与数据；色条与波形颜色一致"
                                TextWrapping="Wrap"/>
-
-                    <!-- Data table -->
-                    <Border Style="{StaticResource MacCardStyle}" Margin="0,20,0,0" Padding="0">
-                        <DockPanel>
-                            <Grid DockPanel.Dock="Top" Margin="16,16,16,8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="通道数据" Style="{StaticResource MacCaptionStyle}"/>
-                                    <TextBlock Margin="12,0,0,0" Style="{StaticResource MacSecondaryStyle}">
-                                        <Run Text="— "/>
-                                        <Run Text="{Binding ActiveFile.FileName, Mode=OneWay, TargetNullValue='未选择'}"/>
-                                    </TextBlock>
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                    <Button Content="首页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding FirstPageCommand}"/>
-                                    <Button Content="上一页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding PreviousPageCommand}"/>
-                                    <TextBlock VerticalAlignment="Center" Margin="8,0"
-                                               Text="{Binding PageInfo}" Style="{StaticResource MacSecondaryStyle}"/>
-                                    <Button Content="下一页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding NextPageCommand}"/>
-                                    <Button Content="末页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding LastPageCommand}"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <DataGrid ItemsSource="{Binding PageRows}"
-                                      AutoGenerateColumns="False"
-                                      IsReadOnly="True"
-                                      CanUserAddRows="False"
-                                      CanUserDeleteRows="False"
-                                      SelectionMode="Single"
-                                      Margin="8,0,8,16"
-                                      MaxHeight="360">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="索引" Binding="{Binding Index}" Width="120"/>
-                                    <DataGridTextColumn Header="数值" Binding="{Binding FormattedValue}" Width="*"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
-                        </DockPanel>
-                    </Border>
                 </StackPanel>
             </ScrollViewer>
         </Grid>

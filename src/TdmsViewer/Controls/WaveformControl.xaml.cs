@@ -56,6 +56,7 @@ public partial class WaveformControl : UserControl
         WpfPlot.Plot.Grid.MajorLineColor = GridColor.WithAlpha(0.6);
         WpfPlot.Plot.Grid.MinorLineColor = Colors.Transparent;
         WpfPlot.Plot.Axes.Color(GridColor);
+        WpfPlot.Plot.HideLegend();
     }
 
     private void Redraw()
@@ -68,7 +69,6 @@ public partial class WaveformControl : UserControl
 
         if (seriesList.Count == 0)
         {
-            WpfPlot.Plot.HideLegend();
             WpfPlot.Refresh();
             return;
         }
@@ -81,13 +81,7 @@ public partial class WaveformControl : UserControl
             SignalXY sig = WpfPlot.Plot.Add.SignalXY(xs, ys);
             sig.Color = Color.FromHex(series.Color);
             sig.LineWidth = 1.5f;
-            sig.LegendText = series.Label;
         }
-
-        if (seriesList.Count > 1)
-            WpfPlot.Plot.ShowLegend(Alignment.UpperRight);
-        else
-            WpfPlot.Plot.HideLegend();
 
         WpfPlot.Plot.Axes.AutoScale();
         WpfPlot.Refresh();

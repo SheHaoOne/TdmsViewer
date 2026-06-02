@@ -15,4 +15,8 @@ public partial class TdmsFileListItem : ObservableObject
     /// <summary>单击文件名后用于属性/数据/音频的来源。</summary>
     [ObservableProperty]
     private bool _isSelectedForData;
+
+    /// <summary>与波形曲线一致的线条颜色（十六进制）。</summary>
+    [ObservableProperty]
+    private string _plotColor = "#007AFF";
 }

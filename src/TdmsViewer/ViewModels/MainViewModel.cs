@@ -293,6 +293,21 @@ public partial class MainViewModel : ObservableObject, IDisposable
         ActiveFile = LoadedFiles.FirstOrDefault(f => f.IsSelectedForData) ?? LoadedFiles.FirstOrDefault();
         if (ActiveFile != null)
             ActiveFile.IsSelectedForData = true;
+
+        UpdateFilePlotColors();
+    }
+
+    private void UpdateFilePlotColors()
+    {
+        for (var i = 0; i < LoadedFiles.Count; i++)
+            LoadedFiles[i].PlotColor = PlotColorPalette.GetColorForFileIndex(i);
+    }
+
+    private string GetPlotColorForFile(string filePath)
+    {
+        var index = LoadedFiles.ToList().FindIndex(f =>
+            string.Equals(f.FilePath, filePath, StringComparison.OrdinalIgnoreCase));
+        return PlotColorPalette.GetColorForFileIndex(index < 0 ? 0 : index);
     }
 
     private void SubscribeFileItem(TdmsFileListItem item)
@@ -404,7 +419,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             {
                 FilePath = src.FilePath,
                 Label = label,
-                Color = PlotColorPalette.GetColor(i),
+                Color = GetPlotColorForFile(src.FilePath),
                 Points = points
             });
         }
