@@ -16,27 +16,28 @@ public partial class App : Application
         MainWindow = window;
         window.Show();
 
-        var filePath = ResolveTdmsPathFromArgs(e.Args);
-        if (!string.IsNullOrEmpty(filePath))
-            _mainViewModel.OpenFile(filePath);
+        var paths = ResolveTdmsPathsFromArgs(e.Args);
+        if (paths.Count > 0)
+            _mainViewModel.ImportFilesFromPaths(paths, replaceSession: true);
     }
 
     /// <summary>
-    /// 从命令行参数解析 .tdms 路径（支持双击关联与拖放启动）。
+    /// 从命令行参数解析全部 .tdms 路径（支持双击关联与拖放启动）。
     /// </summary>
-    internal static string? ResolveTdmsPathFromArgs(string[] args)
+    internal static IReadOnlyList<string> ResolveTdmsPathsFromArgs(string[] args)
     {
         if (args.Length == 0)
-            return null;
+            return Array.Empty<string>();
 
+        var paths = new List<string>();
         foreach (var arg in args)
         {
             var path = arg.Trim('"');
             if (File.Exists(path) &&
                 string.Equals(Path.GetExtension(path), ".tdms", StringComparison.OrdinalIgnoreCase))
-                return Path.GetFullPath(path);
+                paths.Add(Path.GetFullPath(path));
         }
 
-        return null;
+        return paths;
     }
 }

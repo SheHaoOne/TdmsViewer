@@ -4,9 +4,10 @@
         xmlns:controls="clr-namespace:TdmsViewer.Controls"
         xmlns:conv="clr-namespace:TdmsViewer.Converters"
         xmlns:models="clr-namespace:TdmsViewer.Models"
+        xmlns:vm="clr-namespace:TdmsViewer.ViewModels"
         Title="{Binding WindowTitle}"
-        Width="1280" Height="800"
-        MinWidth="960" MinHeight="640"
+        Width="1320" Height="820"
+        MinWidth="1000" MinHeight="640"
         WindowStartupLocation="CenterScreen"
         AllowDrop="True"
         Drop="Window_Drop"
@@ -31,16 +32,36 @@
             </Border>
         </DataTemplate>
 
-        <DataTemplate x:Key="ChannelItemTemplate" DataType="{x:Type models:TdmsChannelInfo}">
+        <DataTemplate x:Key="MergedChannelTemplate" DataType="{x:Type models:MergedChannelInfo}">
             <StackPanel>
                 <TextBlock Text="{Binding ChannelName}" FontWeight="SemiBold"/>
                 <TextBlock Text="{Binding GroupName}" Style="{StaticResource MacSecondaryStyle}" Margin="0,2,0,0"/>
                 <TextBlock Margin="0,4,0,0" Style="{StaticResource MacSecondaryStyle}">
-                    <Run Text="{Binding SampleCount, StringFormat={}{0:N0}}"/>
-                    <Run Text=" 点 · "/>
-                    <Run Text="{Binding DataTypeName}"/>
+                    <Run Text="{Binding SourceCount, Mode=OneWay}"/>
+                    <Run Text=" 个文件可叠加"/>
                 </TextBlock>
             </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate x:Key="FileListItemTemplate" DataType="{x:Type vm:TdmsFileListItem}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="{Binding FileName}" FontWeight="Medium" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Style="{StaticResource MacSecondaryStyle}" Margin="0,2,0,0">
+                        <Run Text="{Binding ChannelCount, Mode=OneWay}"/>
+                        <Run Text=" 个通道"/>
+                    </TextBlock>
+                </StackPanel>
+                <Button Grid.Column="1" Content="×" Padding="6,2" Margin="4,0,0,0"
+                        Style="{StaticResource MacToolbarButtonStyle}"
+                        Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                        CommandParameter="{Binding}"
+                        ToolTip="移除此文件"/>
+            </Grid>
         </DataTemplate>
     </Window.Resources>
 
@@ -55,8 +76,8 @@
         <Border Grid.Row="0" Background="#F2FFFFFF" BorderBrush="{StaticResource MacSeparatorBrush}" BorderThickness="0,0,0,0.5" Padding="16,12">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Content="打开" Style="{StaticResource MacPrimaryButtonStyle}" Command="{Binding OpenFileCommand}"/>
-                    <Button Content="导入" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ImportFileCommand}"/>
+                    <Button Content="批量导入" Style="{StaticResource MacPrimaryButtonStyle}" Command="{Binding BatchImportCommand}"/>
+                    <Button Content="清空" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ClearFilesCommand}"/>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
                     <Button Content="播放音频" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding PlayAudioCommand}"/>
                     <Button Content="停止" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding StopAudioCommand}"/>
@@ -71,36 +92,67 @@
                 </StackPanel>
                 <TextBlock DockPanel.Dock="Right" Style="{StaticResource MacSecondaryStyle}"
                            VerticalAlignment="Center"
-                           Text="{Binding CurrentFilePath, TargetNullValue=未打开文件}"
-                           TextTrimming="CharacterEllipsis" MaxWidth="400"/>
+                           Text="{Binding SessionSummary, TargetNullValue=未导入文件}"
+                           TextTrimming="CharacterEllipsis" MaxWidth="420"/>
             </DockPanel>
         </Border>
 
         <!-- Main content -->
         <Grid Grid.Row="1" Margin="16">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="16"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Channel list -->
-            <Border Grid.Column="0" Style="{StaticResource MacCardStyle}" Padding="8">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="通道" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
-                    <ListBox ItemsSource="{Binding Channels}"
-                             SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
-                             ItemTemplate="{StaticResource ChannelItemTemplate}"
-                             ItemContainerStyle="{StaticResource MacListBoxItemStyle}"
-                             BorderThickness="0"
-                             Background="Transparent"/>
-                </DockPanel>
-            </Border>
+            <!-- Left: files + channels -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,0,0,12" MaxHeight="180">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="已导入文件" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,8"/>
+                        <ListBox ItemsSource="{Binding LoadedFiles}"
+                                 ItemTemplate="{StaticResource FileListItemTemplate}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"/>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Row="1" Style="{StaticResource MacCardStyle}" Padding="8">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="通道（同名叠加）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
+                        <ListBox ItemsSource="{Binding MergedChannels}"
+                                 SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
+                                 ItemTemplate="{StaticResource MergedChannelTemplate}"
+                                 ItemContainerStyle="{StaticResource MacListBoxItemStyle}"
+                                 BorderThickness="0"
+                                 Background="Transparent"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
 
             <!-- Detail panel -->
             <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
-                    <!-- Property cards -->
+                    <!-- Source selector for data/properties -->
+                    <Grid Margin="0,0,0,12" Visibility="{Binding HasMultipleSources, Converter={StaticResource BoolVis}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="查看数据来源" Style="{StaticResource MacCaptionStyle}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <ComboBox Grid.Column="1"
+                                  ItemsSource="{Binding AvailableSources}"
+                                  SelectedItem="{Binding SelectedSource, Mode=TwoWay}"
+                                  DisplayMemberPath="FileName"
+                                  Padding="10,8"/>
+                    </Grid>
+
                     <TextBlock Text="通道属性" Style="{StaticResource MacCaptionStyle}" Margin="0,0,0,12"/>
                     <ItemsControl ItemsSource="{Binding PropertyCards}"
                                   ItemTemplate="{StaticResource PropertyCardTemplate}">
@@ -111,7 +163,11 @@
                         </ItemsControl.ItemsPanel>
                     </ItemsControl>
 
-                    <controls:WaveformControl Margin="0,20,0,0" Points="{Binding WaveformPoints}" MinHeight="240"/>
+                    <controls:WaveformControl Margin="0,20,0,0" Series="{Binding WaveformSeries}" MinHeight="280"/>
+
+                    <TextBlock Margin="0,8,0,0" Style="{StaticResource MacSecondaryStyle}"
+                               Text="选择相同组名与通道名的数据将叠加显示，便于对比差异"
+                               TextWrapping="Wrap"/>
 
                     <!-- Data table -->
                     <Border Style="{StaticResource MacCardStyle}" Margin="0,20,0,0" Padding="0">
@@ -121,7 +177,11 @@
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="通道数据" Style="{StaticResource MacCaptionStyle}" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="通道数据" Style="{StaticResource MacCaptionStyle}"/>
+                                    <TextBlock Margin="12,0,0,0" Style="{StaticResource MacSecondaryStyle}"
+                                               Text="{Binding SelectedSource.FileName, TargetNullValue=''}" />
+                                </StackPanel>
                                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                                     <Button Content="首页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding FirstPageCommand}"/>
                                     <Button Content="上一页" Style="{StaticResource MacToolbarButtonStyle}" Padding="10,6" Command="{Binding PreviousPageCommand}"/>
@@ -161,17 +221,21 @@
             </DockPanel>
         </Border>
 
-        <!-- Empty state overlay -->
-        <Border Grid.Row="1" Grid.RowSpan="1"
+        <!-- Empty state -->
+        <Border Grid.Row="1"
                 Background="#CCF5F5F7"
                 Visibility="{Binding HasFile, Converter={StaticResource BoolVisInvert}}"
                 Margin="16">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
                 <TextBlock Text="TdmsViewer" FontSize="28" FontWeight="Light" HorizontalAlignment="Center"/>
-                <TextBlock Text="打开、导入或拖放 .tdms 文件开始查看" Style="{StaticResource MacSecondaryStyle}"
-                           Margin="0,12,0,24" HorizontalAlignment="Center"/>
-                <Button Content="打开 TDMS 文件" Style="{StaticResource MacPrimaryButtonStyle}"
-                        Command="{Binding OpenFileCommand}" HorizontalAlignment="Center"/>
+                <TextBlock Text="批量导入多个 TDMS 文件，将相同通道的波形叠加显示以便对比差异"
+                           Style="{StaticResource MacSecondaryStyle}"
+                           Margin="0,12,0,24" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                <Button Content="批量导入 TDMS 文件" Style="{StaticResource MacPrimaryButtonStyle}"
+                        Command="{Binding BatchImportCommand}" HorizontalAlignment="Center"/>
+                <TextBlock Text="也可将多个 .tdms 文件拖入窗口（追加导入）"
+                           Style="{StaticResource MacSecondaryStyle}"
+                           Margin="0,16,0,0" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>

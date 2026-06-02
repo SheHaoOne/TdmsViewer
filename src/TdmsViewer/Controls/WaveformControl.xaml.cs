@@ -9,16 +9,15 @@ namespace TdmsViewer.Controls;
 
 public partial class WaveformControl : UserControl
 {
-    private static readonly Color AccentColor = Color.FromHex("#007AFF");
     private static readonly Color GridColor = Color.FromHex("#D2D2D7");
     private static readonly Color PlotBgColor = Color.FromHex("#E8E8ED");
 
-    public static readonly DependencyProperty PointsProperty =
+    public static readonly DependencyProperty SeriesProperty =
         DependencyProperty.Register(
-            nameof(Points),
-            typeof(IEnumerable<WaveformPoint>),
+            nameof(Series),
+            typeof(IEnumerable<WaveformSeries>),
             typeof(WaveformControl),
-            new PropertyMetadata(null, OnPointsChanged));
+            new PropertyMetadata(null, OnSeriesChanged));
 
     public WaveformControl()
     {
@@ -27,13 +26,13 @@ public partial class WaveformControl : UserControl
         Loaded += (_, _) => Redraw();
     }
 
-    public IEnumerable<WaveformPoint>? Points
+    public IEnumerable<WaveformSeries>? Series
     {
-        get => (IEnumerable<WaveformPoint>?)GetValue(PointsProperty);
-        set => SetValue(PointsProperty, value);
+        get => (IEnumerable<WaveformSeries>?)GetValue(SeriesProperty);
+        set => SetValue(SeriesProperty, value);
     }
 
-    private static void OnPointsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnSeriesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not WaveformControl control)
             return;
@@ -64,21 +63,31 @@ public partial class WaveformControl : UserControl
         WpfPlot.Plot.Clear();
         ConfigurePlotStyle();
 
-        var points = Points?.ToList() ?? new List<WaveformPoint>();
-        EmptyHint.Visibility = points.Count < 2 ? Visibility.Visible : Visibility.Collapsed;
+        var seriesList = Series?.Where(s => s.Points.Count >= 2).ToList() ?? new List<WaveformSeries>();
+        EmptyHint.Visibility = seriesList.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        if (points.Count < 2)
+        if (seriesList.Count == 0)
         {
+            WpfPlot.Plot.HideLegend();
             WpfPlot.Refresh();
             return;
         }
 
-        var xs = points.Select(p => p.X).ToArray();
-        var ys = points.Select(p => p.Y).ToArray();
+        foreach (var series in seriesList)
+        {
+            var xs = series.Points.Select(p => p.X).ToArray();
+            var ys = series.Points.Select(p => p.Y).ToArray();
 
-        SignalXY sig = WpfPlot.Plot.Add.SignalXY(xs, ys);
-        sig.Color = AccentColor;
-        sig.LineWidth = 1.5f;
+            SignalXY sig = WpfPlot.Plot.Add.SignalXY(xs, ys);
+            sig.Color = Color.FromHex(series.Color);
+            sig.LineWidth = 1.5f;
+            sig.LegendText = series.Label;
+        }
+
+        if (seriesList.Count > 1)
+            WpfPlot.Plot.ShowLegend(Alignment.UpperRight);
+        else
+            WpfPlot.Plot.HideLegend();
 
         WpfPlot.Plot.Axes.AutoScale();
         WpfPlot.Refresh();
