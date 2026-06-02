@@ -26,11 +26,4 @@
     <Resource Include="Assets\**\*" />
   </ItemGroup>
 
-  <Target Name="PackAppIcon" BeforeTargets="PrepareResourceNames"
-          Condition="Exists('$(MSBuildProjectDirectory)\Assets\app-icon.png')">
-    <Exec Command="python3 &quot;$(MSBuildThisFileDirectory)..\..\scripts\pack-app-icon.py&quot;"
-          WorkingDirectory="$(MSBuildThisFileDirectory)..\.."
-          IgnoreExitCode="false" />
-  </Target>
-
 </Project>
