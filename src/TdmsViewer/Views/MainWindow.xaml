@@ -6,6 +6,7 @@
         xmlns:models="clr-namespace:TdmsViewer.Models"
         xmlns:vm="clr-namespace:TdmsViewer.ViewModels"
         Title="{Binding WindowTitle}"
+        Icon="Assets/app-icon.ico"
         Width="1320" Height="820"
         MinWidth="1000" MinHeight="640"
         WindowStartupLocation="CenterScreen"
@@ -298,6 +299,7 @@
                 Visibility="{Binding HasFile, Converter={StaticResource BoolVisInvert}}"
                 Margin="16">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
+                <Image Source="/Assets/app-icon.png" Width="96" Height="96" HorizontalAlignment="Center" Margin="0,0,0,16"/>
                 <TextBlock Text="TdmsViewer" FontSize="28" FontWeight="Light" HorizontalAlignment="Center"/>
                 <TextBlock Text="批量导入多个 TDMS 文件，勾选文件叠加波形，单击文件名查看数据"
                            Style="{StaticResource MacSecondaryStyle}"
