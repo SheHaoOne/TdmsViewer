@@ -20,6 +20,7 @@
     <SolidColorBrush x:Key="MacTextPrimaryBrush" Color="{StaticResource MacTextPrimary}"/>
     <SolidColorBrush x:Key="MacTextSecondaryBrush" Color="{StaticResource MacTextSecondary}"/>
     <SolidColorBrush x:Key="MacSeparatorBrush" Color="{StaticResource MacSeparator}"/>
+    <SolidColorBrush x:Key="MacDestructiveBrush" Color="{StaticResource MacDestructive}"/>
 
     <FontFamily x:Key="MacFont">Segoe UI, PingFang SC, Microsoft YaHei UI, sans-serif</FontFamily>
 
@@ -185,7 +186,7 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#1AFF3B30"/>
-                            <Setter Property="Foreground" Value="{StaticResource MacDestructive}"/>
+                            <Setter Property="Foreground" Value="{StaticResource MacDestructiveBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
                             <Setter TargetName="Bd" Property="Background" Value="#33FF3B30"/>
