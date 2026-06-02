@@ -15,6 +15,8 @@ public sealed class AudioService : IDisposable
     private AudioFileReader? _reader;
     private string? _tempWavPath;
 
+    public event EventHandler? PlaybackStopped;
+
     public const int DefaultSampleRate = 44100;
 
     public void PlayFromChannelData(double[] data, double? sampleRateHz)
@@ -27,13 +29,14 @@ public sealed class AudioService : IDisposable
         var rate = ResolveSampleRate(sampleRateHz);
         var playbackSamples = BuildPlaybackSamples(data);
 
+        // 优先使用临时 WAV + AudioFileReader，在 Windows 上最稳定
         try
         {
-            PlayViaWaveOut(playbackSamples, rate);
+            PlayViaTempWavFile(playbackSamples, rate);
         }
         catch (Exception ex) when (IsDeviceError(ex))
         {
-            PlayViaTempWavFile(playbackSamples, rate);
+            PlayViaWaveOut(playbackSamples, rate);
         }
     }
 
@@ -44,7 +47,7 @@ public sealed class AudioService : IDisposable
         IWaveProvider waveProvider = new SampleToWaveProvider16(sampleProvider);
 
         _player = new WaveOutEvent();
-        _player.PlaybackStopped += OnPlaybackStopped;
+        _player.PlaybackStopped += OnPlayerPlaybackStopped;
         _player.Init(waveProvider);
         _player.Play();
     }
@@ -57,33 +60,35 @@ public sealed class AudioService : IDisposable
 
         _reader = new AudioFileReader(_tempWavPath);
         _player = new WaveOutEvent();
-        _player.PlaybackStopped += OnPlaybackStopped;
+        _player.PlaybackStopped += OnPlayerPlaybackStopped;
         _player.Init(_reader);
         _player.Play();
     }
 
-    private void OnPlaybackStopped(object? sender, StoppedEventArgs e)
+    private void OnPlayerPlaybackStopped(object? sender, StoppedEventArgs e)
     {
         if (sender is not WaveOutEvent player || player != _player)
             return;
 
         CleanupPlayback();
+        PlaybackStopped?.Invoke(this, EventArgs.Empty);
     }
 
     public void Stop()
     {
-        _player?.Stop();
+        if (_player == null)
+            return;
+
+        _player.PlaybackStopped -= OnPlayerPlaybackStopped;
+        _player.Stop();
         CleanupPlayback();
+        PlaybackStopped?.Invoke(this, EventArgs.Empty);
     }
 
     private void CleanupPlayback()
     {
-        if (_player != null)
-        {
-            _player.PlaybackStopped -= OnPlaybackStopped;
-            _player.Dispose();
-            _player = null;
-        }
+        _player?.Dispose();
+        _player = null;
 
         _reader?.Dispose();
         _reader = null;

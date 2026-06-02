@@ -23,6 +23,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private double[]? _currentChannelData;
     private ChannelSourceRef? _activeSource;
     private bool _suppressSelectAllSync;
+    private bool _suppressActiveFileChanged;
+    private int _channelLoadGeneration;
 
     [ObservableProperty]
     private string _windowTitle = "TdmsViewer";
@@ -90,6 +92,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public MainViewModel()
     {
         IsFileAssociationRegistered = FileAssociationService.IsRegistered();
+        _audioService.PlaybackStopped += (_, _) => IsPlaying = false;
     }
 
     partial void OnSelectedChannelChanged(MergedChannelInfo? value)
@@ -100,8 +103,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     partial void OnActiveFileChanged(TdmsFileListItem? value)
     {
-        if (value != null && SelectedChannel != null)
-            LoadActiveFileData(value);
+        if (_suppressActiveFileChanged || value == null || SelectedChannel == null)
+            return;
+
+        LoadActiveFileData(value);
     }
 
     [RelayCommand]
@@ -287,9 +292,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         UpdateFilePlotColors();
 
+        _suppressActiveFileChanged = true;
         ActiveFile = LoadedFiles.FirstOrDefault(f =>
                          string.Equals(f.FilePath, previousDataPath, StringComparison.OrdinalIgnoreCase))
                      ?? LoadedFiles.FirstOrDefault();
+        _suppressActiveFileChanged = false;
     }
 
     private void UpdateFilePlotColors()
@@ -334,16 +341,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _suppressSelectAllSync = false;
     }
 
-    private void SetActiveFile(TdmsFileListItem file) => ActiveFile = file;
-
     private void LoadActiveFileData(TdmsFileListItem file)
     {
         if (SelectedChannel == null)
             return;
 
-        var source = SelectedChannel.Sources.FirstOrDefault(s =>
-            string.Equals(s.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase));
-
+        var source = ResolveSourceForFile(file);
         if (source == null)
         {
             StatusMessage = $"{file.FileName} 中不含当前通道";
@@ -357,8 +360,37 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _ = LoadSourceDataAsync(source);
     }
 
+    private ChannelSourceRef? ResolveSourceForFile(TdmsFileListItem file)
+    {
+        if (SelectedChannel == null)
+            return null;
+
+        var matches = SelectedChannel.Sources
+            .Where(s => string.Equals(s.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return matches.Count switch
+        {
+            0 => null,
+            1 => matches[0],
+            _ => matches.FirstOrDefault(m => IsSameSource(m, _activeSource)) ?? matches[0]
+        };
+    }
+
+    private static bool IsSameSource(ChannelSourceRef a, ChannelSourceRef? b)
+    {
+        if (b == null)
+            return false;
+
+        return string.Equals(a.FilePath, b.FilePath, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(a.Channel.GroupName, b.Channel.GroupName, StringComparison.OrdinalIgnoreCase)
+               && string.Equals(a.Channel.ChannelName, b.Channel.ChannelName, StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task LoadMergedChannelAsync(MergedChannelInfo merged)
     {
+        var generation = ++_channelLoadGeneration;
+
         try
         {
             IsBusy = true;
@@ -366,8 +398,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             _cachedOverlaySeries.Clear();
             var seriesList = await Task.Run(() => BuildOverlaySeries(merged));
-            _cachedOverlaySeries.AddRange(seriesList);
 
+            if (generation != _channelLoadGeneration)
+                return;
+
+            _cachedOverlaySeries.Clear();
+            _cachedOverlaySeries.AddRange(seriesList);
             ApplyOverlayVisibility();
 
             var dataFile = ActiveFile != null &&
@@ -377,9 +413,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
                       merged.Sources.Any(s => string.Equals(s.FilePath, f.FilePath, StringComparison.OrdinalIgnoreCase)));
 
             if (dataFile != null)
-                SetActiveFile(dataFile);
+            {
+                var source = ResolveSourceForFile(dataFile);
+                _suppressActiveFileChanged = true;
+                ActiveFile = dataFile;
+                _suppressActiveFileChanged = false;
 
-            var visibleCount = LoadedFiles.Count(f => f.IsVisibleOnPlot);
+                if (source != null)
+                    await LoadSourceDataAsync(source, generation);
+            }
+
+            if (generation != _channelLoadGeneration)
+                return;
+
+            var visibleCount = WaveformSeries.Count;
             StatusMessage = $"通道 {merged.DisplayName} — 叠加 {visibleCount} / {merged.SourceCount} 条波形";
         }
         catch (Exception ex)
@@ -388,7 +435,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            IsBusy = false;
+            if (generation == _channelLoadGeneration)
+                IsBusy = false;
         }
     }
 
@@ -408,6 +456,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
             result.Add(new WaveformSeries
             {
+                SeriesKey = $"{src.FilePath}|{src.Channel.GroupName}|{src.Channel.ChannelName}",
                 FilePath = src.FilePath,
                 Label = label,
                 Color = GetPlotColorForFile(src.FilePath),
@@ -436,17 +485,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    private async Task LoadSourceDataAsync(ChannelSourceRef source)
+    private Task LoadSourceDataAsync(ChannelSourceRef source) =>
+        LoadSourceDataAsync(source, _channelLoadGeneration);
+
+    private async Task LoadSourceDataAsync(ChannelSourceRef source, int generation)
     {
         try
         {
             IsBusy = true;
             StatusMessage = $"正在读取 {source.FileName} …";
 
-            _activeSource = source;
-            _currentChannelData = await Task.Run(() =>
+            var data = await Task.Run(() =>
                 _tdmsService.ReadChannelData(source.FilePath, source.Channel));
 
+            if (generation != _channelLoadGeneration)
+                return;
+
+            _activeSource = source;
+            _currentChannelData = data;
             TotalSamples = _currentChannelData.Length;
             TotalPages = Math.Max(1, (int)Math.Ceiling(TotalSamples / (double)PageSize));
             CurrentPage = 0;
@@ -454,7 +510,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshPropertyCards(source.Channel);
             RefreshPage();
 
-            StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点（单击文件名切换）";
+            var groupHint = SelectedChannel?.Sources.Count(s =>
+                string.Equals(s.FilePath, source.FilePath, StringComparison.OrdinalIgnoreCase)) > 1
+                ? $" ({source.Channel.GroupName})"
+                : string.Empty;
+
+            StatusMessage = $"数据：{source.FileName}{groupHint} — {TotalSamples:N0} 个采样点";
         }
         catch (Exception ex)
         {
@@ -462,7 +523,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            IsBusy = false;
+            if (generation == _channelLoadGeneration)
+                IsBusy = false;
         }
     }
 
@@ -570,27 +632,31 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private bool TryEnsureChannelDataForPlayback(out double[] data, out ChannelSourceRef source)
     {
-        source = _activeSource
-                 ?? SelectedChannel!.Sources.FirstOrDefault(s =>
-                     string.Equals(s.FilePath, ActiveFile!.FilePath, StringComparison.OrdinalIgnoreCase))
-                 ?? SelectedChannel!.Sources[0];
+        data = Array.Empty<double>();
+        source = null!;
 
-        if (!string.Equals(source.FilePath, ActiveFile!.FilePath, StringComparison.OrdinalIgnoreCase))
+        if (ActiveFile == null || SelectedChannel == null)
+            return false;
+
+        var resolved = ResolveSourceForFile(ActiveFile);
+        if (resolved == null)
         {
-            var match = SelectedChannel!.Sources.FirstOrDefault(s =>
-                string.Equals(s.FilePath, ActiveFile.FilePath, StringComparison.OrdinalIgnoreCase));
-            if (match != null)
-                source = match;
+            MessageBox.Show($"{ActiveFile.FileName} 中不含当前通道。", "播放音频", MessageBoxButton.OK, MessageBoxImage.Information);
+            return false;
         }
 
-        if (_currentChannelData != null &&
-            _activeSource != null &&
-            string.Equals(_activeSource.FilePath, source.FilePath, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(_activeSource.Channel.GroupName, source.Channel.GroupName, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(_activeSource.Channel.ChannelName, source.Channel.ChannelName, StringComparison.OrdinalIgnoreCase)
+        source = resolved;
+
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
         {
+            if (_currentChannelData.Length == 0)
+            {
+                MessageBox.Show("当前通道没有可播放的数据。", "播放音频", MessageBoxButton.OK, MessageBoxImage.Information);
+                return false;
+            }
+
             data = _currentChannelData;
-            return data.Length > 0;
+            return true;
         }
 
         try
@@ -617,7 +683,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         catch (Exception ex)
         {
             MessageBox.Show($"读取通道数据失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            data = Array.Empty<double>();
             return false;
         }
         finally
@@ -637,13 +702,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void ExportAudio()
     {
-        if (_currentChannelData == null || _activeSource == null)
+        if (SelectedChannel == null || ActiveFile == null)
+        {
+            MessageBox.Show("请先选择通道并单击文件名。", "导出音频", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (!TryEnsureChannelDataForPlayback(out _, out var source))
+            return;
+
+        if (_currentChannelData == null)
             return;
 
         var dialog = new SaveFileDialog
         {
             Filter = "WAV 音频 (*.wav)|*.wav",
-            FileName = $"{_activeSource.Channel.ChannelName}_{_activeSource.FileName}.wav",
+            FileName = $"{source.Channel.ChannelName}_{source.FileName}.wav",
             Title = "导出音频"
         };
 
@@ -652,7 +726,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         try
         {
-            _audioService.ExportWav(dialog.FileName, _currentChannelData, _activeSource.Channel.SampleRateHz);
+            _audioService.ExportWav(dialog.FileName, _currentChannelData, source.Channel.SampleRateHz);
             StatusMessage = $"已导出 {dialog.FileName}";
             MessageBox.Show("音频导出成功。", "导出", MessageBoxButton.OK, MessageBoxImage.Information);
         }
