@@ -179,7 +179,7 @@
 
                 <Border Grid.Row="1" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,6,0,0">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="通道（同名叠加）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
+                        <TextBlock DockPanel.Dock="Top" Text="通道（同名叠加，不限组）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
                         <ListBox ItemsSource="{Binding MergedChannels}"
                                  SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
                                  ItemTemplate="{StaticResource MergedChannelTemplate}"

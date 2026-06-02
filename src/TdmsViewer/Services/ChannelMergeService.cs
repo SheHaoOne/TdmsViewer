@@ -4,18 +4,17 @@ namespace TdmsViewer.Services;
 
 public sealed class ChannelMergeService
 {
-    public static string BuildChannelKey(string groupName, string channelName) =>
-        $"{groupName}\u001f{channelName}";
+    public static string BuildChannelKey(string channelName) => channelName;
 
     public IReadOnlyList<MergedChannelInfo> MergeChannels(IEnumerable<TdmsFileEntry> files)
     {
-        var map = new Dictionary<string, List<ChannelSourceRef>>(StringComparer.Ordinal);
+        var map = new Dictionary<string, List<ChannelSourceRef>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in files)
         {
             foreach (var channel in file.Channels)
             {
-                var key = BuildChannelKey(channel.GroupName, channel.ChannelName);
+                var key = BuildChannelKey(channel.ChannelName);
                 if (!map.TryGetValue(key, out var list))
                 {
                     list = new List<ChannelSourceRef>();
@@ -32,20 +31,34 @@ public sealed class ChannelMergeService
         }
 
         return map
-            .OrderBy(p => p.Value[0].Channel.GroupName, StringComparer.OrdinalIgnoreCase)
-            .ThenBy(p => p.Value[0].Channel.ChannelName, StringComparer.OrdinalIgnoreCase)
-            .Select(p =>
-            {
-                var first = p.Value[0].Channel;
-                return new MergedChannelInfo
-                {
-                    ChannelKey = p.Key,
-                    GroupName = first.GroupName,
-                    ChannelName = first.ChannelName,
-                    DisplayName = $"{first.GroupName} / {first.ChannelName}",
-                    Sources = p.Value.OrderBy(s => s.FileName, StringComparer.OrdinalIgnoreCase).ToList()
-                };
-            })
+            .OrderBy(p => p.Value[0].Channel.ChannelName, StringComparer.OrdinalIgnoreCase)
+            .Select(p => CreateMergedChannel(p.Key, p.Value))
             .ToList();
+    }
+
+    private static MergedChannelInfo CreateMergedChannel(string channelKey, List<ChannelSourceRef> sources)
+    {
+        var ordered = sources.OrderBy(s => s.FileName, StringComparer.OrdinalIgnoreCase).ToList();
+        var first = ordered[0].Channel;
+        var distinctGroups = ordered
+            .Select(s => s.Channel.GroupName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var groupLabel = distinctGroups.Count switch
+        {
+            0 => "—",
+            1 => distinctGroups[0],
+            _ => $"多组 ({distinctGroups.Count})"
+        };
+
+        return new MergedChannelInfo
+        {
+            ChannelKey = channelKey,
+            GroupName = groupLabel,
+            ChannelName = first.ChannelName,
+            DisplayName = first.ChannelName,
+            Sources = ordered
+        };
     }
 }

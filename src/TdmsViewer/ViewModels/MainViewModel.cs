@@ -394,10 +394,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var src = merged.Sources[i];
             var data = _tdmsService.ReadChannelData(src.FilePath, src.Channel);
             var points = _tdmsService.BuildWaveform(data, src.Channel.SampleRateHz);
+            var sameFileCount = merged.Sources.Count(s =>
+                string.Equals(s.FilePath, src.FilePath, StringComparison.OrdinalIgnoreCase));
+            var label = sameFileCount > 1
+                ? $"{src.FileName} ({src.Channel.GroupName})"
+                : src.FileName;
+
             result.Add(new WaveformSeries
             {
                 FilePath = src.FilePath,
-                Label = src.FileName,
+                Label = label,
                 Color = PlotColorPalette.GetColor(i),
                 Points = points
             });

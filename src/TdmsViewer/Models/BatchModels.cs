@@ -15,7 +15,7 @@ public sealed class ChannelSourceRef
 }
 
 /// <summary>
-/// 跨文件合并后的通道（相同组名 + 通道名视为同一通道）。
+/// 跨文件合并后的通道（仅按通道名相同合并，不要求组名一致）。
 /// </summary>
 public sealed class MergedChannelInfo
 {
