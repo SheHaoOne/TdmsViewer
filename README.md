@@ -56,6 +56,7 @@ TdmsViewer.exe "D:\data\sample.tdms"
 - **.NET 8** + **WPF**
 - **[TDMSReader](https://www.nuget.org/packages/TDMSReader)** — 读取 NI TDMS 文件
 - **[NAudio](https://www.nuget.org/packages/NAudio)** — 播放与 WAV 导出
+- **[ScottPlot.WPF](https://www.nuget.org/packages/ScottPlot.WPF)** — 波形图
 - **[CommunityToolkit.Mvvm](https://www.nuget.org/packages/CommunityToolkit.Mvvm)** — MVVM
 
 ## 说明

@@ -17,6 +17,7 @@
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
     <PackageReference Include="TDMSReader" Version="3.1.0" />
   </ItemGroup>
 

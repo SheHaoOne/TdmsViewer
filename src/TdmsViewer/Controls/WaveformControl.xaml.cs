@@ -1,14 +1,18 @@
 using System.Collections.Specialized;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Windows.Shapes;
+using ScottPlot;
+using ScottPlot.Plottables;
 using TdmsViewer.Models;
 
 namespace TdmsViewer.Controls;
 
 public partial class WaveformControl : UserControl
 {
+    private static readonly Color AccentColor = Color.FromHex("#007AFF");
+    private static readonly Color GridColor = Color.FromHex("#D2D2D7");
+    private static readonly Color PlotBgColor = Color.FromHex("#E8E8ED");
+
     public static readonly DependencyProperty PointsProperty =
         DependencyProperty.Register(
             nameof(Points),
@@ -16,11 +20,10 @@ public partial class WaveformControl : UserControl
             typeof(WaveformControl),
             new PropertyMetadata(null, OnPointsChanged));
 
-    private Polyline? _polyline;
-
     public WaveformControl()
     {
         InitializeComponent();
+        ConfigurePlotStyle();
         Loaded += (_, _) => Redraw();
     }
 
@@ -47,61 +50,37 @@ public partial class WaveformControl : UserControl
     private void OnCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) =>
         Dispatcher.Invoke(Redraw);
 
-    private void PlotCanvas_SizeChanged(object sender, SizeChangedEventArgs e) => Redraw();
+    private void ConfigurePlotStyle()
+    {
+        WpfPlot.Plot.FigureBackground.Color = Colors.Transparent;
+        WpfPlot.Plot.DataBackground.Color = PlotBgColor;
+        WpfPlot.Plot.Grid.MajorLineColor = GridColor.WithAlpha(0.6);
+        WpfPlot.Plot.Grid.MinorLineColor = Colors.Transparent;
+        WpfPlot.Plot.Axes.Color(GridColor);
+    }
 
     private void Redraw()
     {
-        PlotCanvas.Children.Clear();
+        WpfPlot.Plot.Clear();
+        ConfigurePlotStyle();
+
         var points = Points?.ToList() ?? new List<WaveformPoint>();
+        EmptyHint.Visibility = points.Count < 2 ? Visibility.Visible : Visibility.Collapsed;
 
-        EmptyHint.Visibility = points.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        if (points.Count < 2 || PlotCanvas.ActualWidth < 1 || PlotCanvas.ActualHeight < 1)
+        if (points.Count < 2)
+        {
+            WpfPlot.Refresh();
             return;
-
-        var minX = points.Min(p => p.X);
-        var maxX = points.Max(p => p.X);
-        var minY = points.Min(p => p.Y);
-        var maxY = points.Max(p => p.Y);
-        var rangeX = Math.Max(maxX - minX, 1e-9);
-        var rangeY = Math.Max(maxY - minY, 1e-9);
-
-        var pad = 8.0;
-        var w = PlotCanvas.ActualWidth - pad * 2;
-        var h = PlotCanvas.ActualHeight - pad * 2;
-
-        var polyPoints = new PointCollection(points.Count);
-        foreach (var p in points)
-        {
-            var x = pad + (p.X - minX) / rangeX * w;
-            var y = pad + h - (p.Y - minY) / rangeY * h;
-            polyPoints.Add(new Point(x, y));
         }
 
-        _polyline = new Polyline
-        {
-            Points = polyPoints,
-            Stroke = (Brush)FindResource("MacAccentBrush"),
-            StrokeThickness = 1.5,
-            StrokeLineJoin = PenLineJoin.Round
-        };
+        var xs = points.Select(p => p.X).ToArray();
+        var ys = points.Select(p => p.Y).ToArray();
 
-        PlotCanvas.Children.Add(_polyline);
+        SignalXY sig = WpfPlot.Plot.Add.SignalXY(xs, ys);
+        sig.Color = AccentColor;
+        sig.LineWidth = 1.5f;
 
-        // 零线
-        if (minY < 0 && maxY > 0)
-        {
-            var zeroY = pad + h - (0 - minY) / rangeY * h;
-            PlotCanvas.Children.Add(new Line
-            {
-                X1 = pad,
-                X2 = pad + w,
-                Y1 = zeroY,
-                Y2 = zeroY,
-                Stroke = (Brush)FindResource("MacSeparatorBrush"),
-                StrokeThickness = 1,
-                StrokeDashArray = new DoubleCollection { 4, 4 }
-            });
-        }
+        WpfPlot.Plot.Axes.AutoScale();
+        WpfPlot.Refresh();
     }
 }
