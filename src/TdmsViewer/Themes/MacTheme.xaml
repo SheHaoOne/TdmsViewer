@@ -197,6 +197,31 @@
         </Setter>
     </Style>
 
+    <!-- 侧栏列表（文件 / 通道）选中时前景色 -->
+    <Style x:Key="MacListPrimaryTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacBodyStyle}">
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                <Setter Property="Foreground" Value="White"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="MacListMetaTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacSecondaryStyle}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                <Setter Property="Foreground" Value="#E6FFFFFF"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="MacFileNameTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacListPrimaryTextStyle}">
+        <Setter Property="FontWeight" Value="Medium"/>
+    </Style>
+
+    <Style x:Key="MacFileMetaTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacListMetaTextStyle}"/>
+
     <Style x:Key="MacFileNameButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource MacFont}"/>
         <Setter Property="FontSize" Value="13"/>
@@ -253,33 +278,9 @@
         </Setter>
     </Style>
 
-    <Style x:Key="MacListBoxItemStyle" TargetType="ListBoxItem">
+    <!-- 与 MacFileListBoxItemStyle 相同，供通道列表复用 -->
+    <Style x:Key="MacListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource MacFileListBoxItemStyle}">
         <Setter Property="Padding" Value="12,10"/>
-        <Setter Property="Margin" Value="4,2"/>
-        <Setter Property="Cursor" Value="Hand"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ListBoxItem">
-                    <Border x:Name="Bd" CornerRadius="8" Padding="{TemplateBinding Padding}"
-                            Background="Transparent">
-                        <ContentPresenter/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsSelected" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource MacAccentBrush}"/>
-                            <Setter Property="Foreground" Value="White"/>
-                        </Trigger>
-                        <MultiTrigger>
-                            <MultiTrigger.Conditions>
-                                <Condition Property="IsMouseOver" Value="True"/>
-                                <Condition Property="IsSelected" Value="False"/>
-                            </MultiTrigger.Conditions>
-                            <Setter TargetName="Bd" Property="Background" Value="#FFE8E8ED"/>
-                        </MultiTrigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style TargetType="Window">

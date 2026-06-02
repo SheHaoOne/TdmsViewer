@@ -18,24 +18,6 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
         <conv:HexColorToBrushConverter x:Key="HexToBrush"/>
 
-        <Style x:Key="MacFileNameTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacBodyStyle}">
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                    <Setter Property="Foreground" Value="White"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
-        <Style x:Key="MacFileMetaTextStyle" TargetType="TextBlock" BasedOn="{StaticResource MacSecondaryStyle}">
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                    <Setter Property="Foreground" Value="#CCFFFFFF"/>
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
-
         <DataTemplate x:Key="PropertyCardTemplate" DataType="{x:Type models:ChannelPropertyCard}">
             <Border Style="{StaticResource MacCardStyle}" Padding="14" MinWidth="160" MaxWidth="280" Margin="0,0,12,12">
                 <StackPanel>
@@ -53,9 +35,9 @@
 
         <DataTemplate x:Key="MergedChannelTemplate" DataType="{x:Type models:MergedChannelInfo}">
             <StackPanel>
-                <TextBlock Text="{Binding ChannelName}" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding GroupName}" Style="{StaticResource MacSecondaryStyle}" Margin="0,2,0,0"/>
-                <TextBlock Margin="0,4,0,0" Style="{StaticResource MacSecondaryStyle}">
+                <TextBlock Text="{Binding ChannelName}" Style="{StaticResource MacListPrimaryTextStyle}"/>
+                <TextBlock Text="{Binding GroupName}" Style="{StaticResource MacListMetaTextStyle}" Margin="0,2,0,0"/>
+                <TextBlock Margin="0,4,0,0" Style="{StaticResource MacListMetaTextStyle}">
                     <Run Text="{Binding SourceCount, Mode=OneWay}"/>
                     <Run Text=" 个文件可叠加"/>
                 </TextBlock>
@@ -184,7 +166,7 @@
                         <ListBox ItemsSource="{Binding MergedChannels}"
                                  SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
                                  ItemTemplate="{StaticResource MergedChannelTemplate}"
-                                 ItemContainerStyle="{StaticResource MacListBoxItemStyle}"
+                                 ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}"
                                  BorderThickness="0"
                                  Background="Transparent"/>
                     </DockPanel>
