@@ -4,6 +4,7 @@ public sealed class TdmsFileEntry
 {
     public required string FilePath { get; init; }
     public required string FileName { get; init; }
+    public required IReadOnlyList<TdmsGroupInfo> Groups { get; init; }
     public required IReadOnlyList<TdmsChannelInfo> Channels { get; init; }
 }
 

@@ -1,20 +1,26 @@
 using System.Globalization;
 using NationalInstruments.Tdms;
+using TdmsFile = NationalInstruments.Tdms.File;
 using TdmsViewer.Models;
 
 namespace TdmsViewer.Services;
 
 public sealed class TdmsFileService
 {
-    public IReadOnlyList<TdmsChannelInfo> LoadChannels(string filePath)
+    public TdmsFileEntry LoadFile(string filePath)
     {
-        using var file = new File(filePath);
+        using var file = new TdmsFile(filePath);
         file.Open();
 
+        var groups = new List<TdmsGroupInfo>();
         var channels = new List<TdmsChannelInfo>();
 
         foreach (var group in file)
         {
+            var groupProps = group.Properties
+                .ToDictionary(p => p.Key, p => (object?)p.Value);
+            var groupChannels = new List<TdmsChannelInfo>();
+
             foreach (var channel in group)
             {
                 var props = channel.Properties
@@ -24,7 +30,7 @@ public sealed class TdmsFileService
                 var sampleCount = TryGetSampleCount(channel, dataTypeName);
                 var sampleRate = TryGetSampleRateHz(props);
 
-                channels.Add(new TdmsChannelInfo
+                var channelInfo = new TdmsChannelInfo
                 {
                     GroupName = group.Name,
                     ChannelName = channel.Name,
@@ -33,16 +39,32 @@ public sealed class TdmsFileService
                     SampleCount = sampleCount,
                     SampleRateHz = sampleRate,
                     Properties = props
-                });
+                };
+
+                groupChannels.Add(channelInfo);
+                channels.Add(channelInfo);
             }
+
+            groups.Add(new TdmsGroupInfo
+            {
+                GroupName = group.Name,
+                Properties = groupProps,
+                Channels = groupChannels
+            });
         }
 
-        return channels;
+        return new TdmsFileEntry
+        {
+            FilePath = filePath,
+            FileName = System.IO.Path.GetFileName(filePath),
+            Groups = groups,
+            Channels = channels
+        };
     }
 
     public double[] ReadChannelData(string filePath, TdmsChannelInfo channelInfo)
     {
-        using var file = new File(filePath);
+        using var file = new TdmsFile(filePath);
         file.Open();
 
         var channel = file.Groups[channelInfo.GroupName].Channels[channelInfo.ChannelName];
@@ -80,9 +102,16 @@ public sealed class TdmsFileService
         return rows;
     }
 
-    public IReadOnlyList<ChannelPropertyCard> BuildPropertyCards(TdmsChannelInfo channel)
+    public IReadOnlyList<ChannelPropertyCard> BuildPropertyCards(TdmsChannelInfo channel) =>
+        BuildPropertyCards(channel.Properties);
+
+    public IReadOnlyList<ChannelPropertyCard> BuildGroupPropertyCards(TdmsGroupInfo group) =>
+        BuildPropertyCards(group.Properties);
+
+    private static IReadOnlyList<ChannelPropertyCard> BuildPropertyCards(
+        IReadOnlyDictionary<string, object?> properties)
     {
-        return channel.Properties
+        return properties
             .OrderBy(p => p.Key, StringComparer.OrdinalIgnoreCase)
             .Select(p => new ChannelPropertyCard
             {

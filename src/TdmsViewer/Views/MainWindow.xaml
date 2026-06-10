@@ -35,6 +35,16 @@
             </Border>
         </DataTemplate>
 
+        <DataTemplate x:Key="GroupListItemTemplate" DataType="{x:Type models:TdmsGroupInfo}">
+            <StackPanel>
+                <TextBlock Text="{Binding GroupName}" Style="{StaticResource MacListPrimaryTextStyle}"/>
+                <TextBlock Margin="0,4,0,0" Style="{StaticResource MacListMetaTextStyle}">
+                    <Run Text="{Binding ChannelCount, Mode=OneWay}"/>
+                    <Run Text=" 个通道"/>
+                </TextBlock>
+            </StackPanel>
+        </DataTemplate>
+
         <DataTemplate x:Key="MergedChannelTemplate" DataType="{x:Type models:MergedChannelInfo}">
             <StackPanel>
                 <TextBlock Text="{Binding ChannelName}" Style="{StaticResource MacListPrimaryTextStyle}"/>
@@ -123,14 +133,15 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Left: files + channels, each 50% height -->
+            <!-- Left: files + groups + channels -->
             <Grid Grid.Column="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,0,0,6">
+                <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,0,0,4">
                     <DockPanel>
                         <Border DockPanel.Dock="Top"
                                 Margin="4,4,4,8"
@@ -162,7 +173,21 @@
                     </DockPanel>
                 </Border>
 
-                <Border Grid.Row="1" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,6,0,0">
+                <Border Grid.Row="1" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,4,0,4">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="组" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
+                        <ListBox ItemsSource="{Binding Groups}"
+                                 SelectedItem="{Binding SelectedGroup, Mode=TwoWay}"
+                                 ItemTemplate="{StaticResource GroupListItemTemplate}"
+                                 ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    </DockPanel>
+                </Border>
+
+                <Border Grid.Row="2" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,4,0,0">
                     <DockPanel>
                         <TextBlock DockPanel.Dock="Top" Text="通道（同名叠加，不限组）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
                         <ListBox ItemsSource="{Binding MergedChannels}"
@@ -179,11 +204,34 @@
             <Grid x:Name="DetailPanel" Grid.Column="2">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- 通道属性：自适应高度，最高 1/3 -->
+                <!-- 组属性：自适应高度，最高 1/4 -->
                 <Grid Grid.Row="0" Margin="0,0,0,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="组属性" Style="{StaticResource MacCaptionStyle}" Margin="0,0,0,8"/>
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  MaxHeight="{Binding ActualHeight, ElementName=DetailPanel, Converter={StaticResource HeightFraction}, ConverterParameter=0.25}">
+                        <ItemsControl ItemsSource="{Binding GroupPropertyCards}"
+                                      ItemTemplate="{StaticResource PropertyCardTemplate}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- 通道属性：自适应高度，最高 1/4 -->
+                <Grid Grid.Row="1" Margin="0,0,0,12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -192,7 +240,7 @@
                     <ScrollViewer Grid.Row="1"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled"
-                                  MaxHeight="{Binding ActualHeight, ElementName=DetailPanel, Converter={StaticResource HeightFraction}, ConverterParameter=0.3333333}">
+                                  MaxHeight="{Binding ActualHeight, ElementName=DetailPanel, Converter={StaticResource HeightFraction}, ConverterParameter=0.25}">
                         <ItemsControl ItemsSource="{Binding PropertyCards}"
                                       ItemTemplate="{StaticResource PropertyCardTemplate}">
                             <ItemsControl.ItemsPanel>
@@ -205,7 +253,7 @@
                 </Grid>
 
                 <!-- 波形图 + 通道数据：占满剩余高度 -->
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="2">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
@@ -277,7 +325,7 @@
                     <TextBlock Grid.Row="1"
                                Margin="0,8,0,0"
                                Style="{StaticResource MacSecondaryStyle}"
-                               Text="勾选文件参与波形叠加；单击文件名查看属性与数据；色条与波形颜色一致"
+                               Text="勾选文件参与波形叠加；单击文件名后选择组与通道查看属性与数据；色条与波形颜色一致"
                                TextWrapping="Wrap"/>
                 </Grid>
             </Grid>
