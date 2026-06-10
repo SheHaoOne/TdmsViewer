@@ -156,8 +156,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         UnsubscribeFileItem(item);
         _loadedFiles.RemoveAll(f => string.Equals(f.FilePath, item.FilePath, StringComparison.OrdinalIgnoreCase));
+
+        if (_loadedFiles.Count == 0)
+        {
+            RefreshFileListUi();
+            MergedChannels.Clear();
+            ClearDetailPanels();
+            SelectedChannel = null;
+            SelectedGroup = null;
+            HasFile = false;
+            SessionSummary = null;
+            WindowTitle = "TdmsViewer";
+            StatusMessage = "请批量导入 TDMS 文件进行对比";
+            return;
+        }
+
         RefreshFileListUi();
-        RebuildMergedChannels(selectFirst: true);
+        RefreshGroupsForActiveFile(ActiveFile);
+        WindowTitle = $"TdmsViewer — {_loadedFiles.Count} 个文件";
+        StatusMessage = $"已加载 {_loadedFiles.Count} 个文件，{MergedChannels.Count} 个通道";
     }
 
     public void ImportFilesFromPaths(IEnumerable<string> paths, bool replaceSession = false) =>
@@ -322,11 +339,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         UpdateFilePlotColors();
 
+        var nextActiveFile = LoadedFiles.FirstOrDefault(f =>
+                                 string.Equals(f.FilePath, previousDataPath, StringComparison.OrdinalIgnoreCase))
+                             ?? LoadedFiles.FirstOrDefault();
+        var activeFilePathChanged = !string.Equals(
+            previousDataPath,
+            nextActiveFile?.FilePath,
+            StringComparison.OrdinalIgnoreCase);
+
         _suppressActiveFileChanged = true;
-        ActiveFile = LoadedFiles.FirstOrDefault(f =>
-                         string.Equals(f.FilePath, previousDataPath, StringComparison.OrdinalIgnoreCase))
-                     ?? LoadedFiles.FirstOrDefault();
+        ActiveFile = nextActiveFile;
         _suppressActiveFileChanged = false;
+
+        if (activeFilePathChanged && ActiveFile != null)
+            RefreshGroupsForActiveFile(ActiveFile);
     }
 
     private void UpdateFilePlotColors()
