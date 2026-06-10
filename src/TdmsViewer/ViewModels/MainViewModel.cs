@@ -112,10 +112,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (!_suppressActiveFileChanged)
             RefreshGroupsForActiveFile(value);
 
-        if (_suppressActiveFileChanged || value == null || SelectedChannel == null)
+        if (_suppressActiveFileChanged || value == null)
             return;
 
-        LoadActiveFileData(value);
+        if (SelectedChannel != null)
+            LoadActiveFileData(value);
+
+        if (!LoadedFiles.Any(f => f.IsVisibleOnPlot))
+            ApplyOverlayVisibility();
     }
 
     partial void OnSelectedGroupChanged(TdmsGroupInfo? value)
@@ -444,6 +448,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 _suppressActiveFileChanged = true;
                 ActiveFile = dataFile;
                 _suppressActiveFileChanged = false;
+                ApplyOverlayVisibility();
 
                 if (source != null)
                     await LoadSourceDataAsync(source, generation);
@@ -452,8 +457,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (generation != _channelLoadGeneration)
                 return;
 
-            var visibleCount = WaveformSeries.Count;
-            StatusMessage = $"通道 {merged.DisplayName} — 叠加 {visibleCount} / {merged.SourceCount} 条波形";
+            ApplyOverlayVisibility();
         }
         catch (Exception ex)
         {
@@ -489,20 +493,37 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void ApplyOverlayVisibility()
     {
-        var visiblePaths = LoadedFiles
-            .Where(f => f.IsVisibleOnPlot)
-            .Select(f => f.FilePath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var checkedFiles = LoadedFiles.Where(f => f.IsVisibleOnPlot).ToList();
+        HashSet<string> visiblePaths;
+
+        if (checkedFiles.Count > 0)
+        {
+            visiblePaths = checkedFiles
+                .Select(f => f.FilePath)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+        else if (ActiveFile != null)
+        {
+            visiblePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ActiveFile.FilePath };
+        }
+        else
+        {
+            visiblePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        }
 
         WaveformSeries.Clear();
         foreach (var series in _cachedOverlaySeries.Where(s => visiblePaths.Contains(s.FilePath)))
             WaveformSeries.Add(series);
 
-        if (SelectedChannel != null)
-        {
-            var visibleCount = WaveformSeries.Count;
-            StatusMessage = $"通道 {SelectedChannel.DisplayName} — 叠加 {visibleCount} 条波形";
-        }
+        if (SelectedChannel == null)
+            return;
+
+        var visibleCount = WaveformSeries.Count;
+        StatusMessage = checkedFiles.Count > 0
+            ? $"通道 {SelectedChannel.DisplayName} — 叠加 {visibleCount} 条波形"
+            : ActiveFile != null
+                ? $"通道 {SelectedChannel.DisplayName} — {ActiveFile.FileName}"
+                : $"通道 {SelectedChannel.DisplayName}";
     }
 
     private Task LoadSourceDataAsync(ChannelSourceRef source) =>

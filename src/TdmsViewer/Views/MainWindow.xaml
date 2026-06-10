@@ -188,7 +188,7 @@
 
                 <Border Grid.Row="2" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,4,0,0">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="通道（当前组内同名叠加）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
+                        <TextBlock DockPanel.Dock="Top" Text="通道" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
                         <ListBox ItemsSource="{Binding MergedChannels}"
                                  SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
                                  ItemTemplate="{StaticResource MergedChannelTemplate}"
@@ -324,7 +324,7 @@
                     <TextBlock Grid.Row="1"
                                Margin="0,8,0,0"
                                Style="{StaticResource MacSecondaryStyle}"
-                               Text="勾选文件参与波形叠加；单击文件名后选择组与通道查看属性与数据；色条与波形颜色一致"
+                               Text="勾选文件参与波形叠加；未勾选时单击文件名显示该文件波形；色条与波形颜色一致"
                                TextWrapping="Wrap"/>
                 </Grid>
             </Grid>
