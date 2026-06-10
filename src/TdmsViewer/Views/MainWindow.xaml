@@ -47,7 +47,7 @@
 
         <DataTemplate x:Key="MergedChannelTemplate" DataType="{x:Type models:MergedChannelInfo}">
             <StackPanel>
-                <TextBlock Text="{Binding DisplayName}" Style="{StaticResource MacListPrimaryTextStyle}"/>
+                <TextBlock Text="{Binding ChannelName}" Style="{StaticResource MacListPrimaryTextStyle}"/>
                 <TextBlock Margin="0,4,0,0" Style="{StaticResource MacListMetaTextStyle}">
                     <Run Text="{Binding SourceCount, Mode=OneWay}"/>
                     <Run Text=" 个文件可叠加"/>
@@ -188,7 +188,7 @@
 
                 <Border Grid.Row="2" Style="{StaticResource MacCardStyle}" Padding="8" Margin="0,4,0,0">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="通道（组+通道同名叠加）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
+                        <TextBlock DockPanel.Dock="Top" Text="通道（当前组内同名叠加）" Style="{StaticResource MacCaptionStyle}" Margin="8,8,8,12"/>
                         <ListBox ItemsSource="{Binding MergedChannels}"
                                  SelectedItem="{Binding SelectedChannel, Mode=TwoWay}"
                                  ItemTemplate="{StaticResource MergedChannelTemplate}"
