@@ -464,17 +464,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var src = merged.Sources[i];
             var data = _tdmsService.ReadChannelData(src.FilePath, src.Channel);
             var points = _tdmsService.BuildWaveform(data, src.Channel.SampleRateHz);
-            var sameFileCount = merged.Sources.Count(s =>
-                string.Equals(s.FilePath, src.FilePath, StringComparison.OrdinalIgnoreCase));
-            var label = sameFileCount > 1
-                ? $"{src.FileName} ({src.Channel.GroupName})"
-                : src.FileName;
-
             result.Add(new WaveformSeries
             {
                 SeriesKey = $"{src.FilePath}|{src.Channel.GroupName}|{src.Channel.ChannelName}",
                 FilePath = src.FilePath,
-                Label = label,
+                Label = src.FileName,
                 Color = GetPlotColorForFile(src.FilePath),
                 Points = points
             });
@@ -527,12 +521,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshPropertyCards(source.Channel);
             RefreshPage();
 
-            var groupHint = SelectedChannel?.Sources.Count(s =>
-                string.Equals(s.FilePath, source.FilePath, StringComparison.OrdinalIgnoreCase)) > 1
-                ? $" ({source.Channel.GroupName})"
-                : string.Empty;
-
-            StatusMessage = $"数据：{source.FileName}{groupHint} — {TotalSamples:N0} 个采样点";
+            StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点";
         }
         catch (Exception ex)
         {

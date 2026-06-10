@@ -4,7 +4,8 @@ namespace TdmsViewer.Services;
 
 public sealed class ChannelMergeService
 {
-    public static string BuildChannelKey(string channelName) => channelName;
+    public static string BuildChannelKey(string groupName, string channelName) =>
+        $"{groupName}|{channelName}";
 
     public IReadOnlyList<MergedChannelInfo> MergeChannels(IEnumerable<TdmsFileEntry> files)
     {
@@ -14,7 +15,7 @@ public sealed class ChannelMergeService
         {
             foreach (var channel in file.Channels)
             {
-                var key = BuildChannelKey(channel.ChannelName);
+                var key = BuildChannelKey(channel.GroupName, channel.ChannelName);
                 if (!map.TryGetValue(key, out var list))
                 {
                     list = new List<ChannelSourceRef>();
@@ -31,7 +32,8 @@ public sealed class ChannelMergeService
         }
 
         return map
-            .OrderBy(p => p.Value[0].Channel.ChannelName, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(p => p.Value[0].Channel.GroupName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(p => p.Value[0].Channel.ChannelName, StringComparer.OrdinalIgnoreCase)
             .Select(p => CreateMergedChannel(p.Key, p.Value))
             .ToList();
     }
@@ -40,24 +42,13 @@ public sealed class ChannelMergeService
     {
         var ordered = sources.OrderBy(s => s.FileName, StringComparer.OrdinalIgnoreCase).ToList();
         var first = ordered[0].Channel;
-        var distinctGroups = ordered
-            .Select(s => s.Channel.GroupName)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        var groupLabel = distinctGroups.Count switch
-        {
-            0 => "—",
-            1 => distinctGroups[0],
-            _ => $"多组 ({distinctGroups.Count})"
-        };
 
         return new MergedChannelInfo
         {
             ChannelKey = channelKey,
-            GroupName = groupLabel,
+            GroupName = first.GroupName,
             ChannelName = first.ChannelName,
-            DisplayName = first.ChannelName,
+            DisplayName = $"{first.GroupName} / {first.ChannelName}",
             Sources = ordered
         };
     }
