@@ -123,8 +123,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
             return;
 
         RefreshGroupPropertyCards(value);
-        if (ActiveFile != null && SelectedChannel != null)
-            LoadActiveFileData(ActiveFile);
     }
 
     [RelayCommand]
@@ -539,34 +537,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
         var previousGroupName = SelectedGroup?.GroupName;
         var preferredGroupName = _activeSource?.Channel.GroupName ?? previousGroupName;
 
-        Groups.Clear();
-        GroupPropertyCards.Clear();
-
-        if (file == null)
+        _suppressSelectedGroupChanged = true;
+        try
         {
-            _suppressSelectedGroupChanged = true;
-            SelectedGroup = null;
+            Groups.Clear();
+            GroupPropertyCards.Clear();
+
+            if (file == null)
+            {
+                SelectedGroup = null;
+                return;
+            }
+
+            var entry = _loadedFiles.FirstOrDefault(f =>
+                string.Equals(f.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+            {
+                SelectedGroup = null;
+                return;
+            }
+
+            foreach (var group in entry.Groups.OrderBy(g => g.GroupName, StringComparer.OrdinalIgnoreCase))
+                Groups.Add(group);
+
+            SelectedGroup = Groups.FirstOrDefault(g =>
+                                !string.IsNullOrEmpty(preferredGroupName) &&
+                                string.Equals(g.GroupName, preferredGroupName, StringComparison.OrdinalIgnoreCase))
+                            ?? Groups.FirstOrDefault();
+        }
+        finally
+        {
             _suppressSelectedGroupChanged = false;
-            return;
         }
 
-        var entry = _loadedFiles.FirstOrDefault(f =>
-            string.Equals(f.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase));
-        if (entry == null)
-            return;
-
-        foreach (var group in entry.Groups.OrderBy(g => g.GroupName, StringComparer.OrdinalIgnoreCase))
-            Groups.Add(group);
-
-        var nextGroup = Groups.FirstOrDefault(g =>
-                            !string.IsNullOrEmpty(preferredGroupName) &&
-                            string.Equals(g.GroupName, preferredGroupName, StringComparison.OrdinalIgnoreCase))
-                        ?? Groups.FirstOrDefault();
-
-        _suppressSelectedGroupChanged = true;
-        SelectedGroup = nextGroup;
-        _suppressSelectedGroupChanged = false;
-        RefreshGroupPropertyCards(nextGroup);
+        RefreshGroupPropertyCards(SelectedGroup);
     }
 
     private void RefreshGroupPropertyCards(TdmsGroupInfo? group)
