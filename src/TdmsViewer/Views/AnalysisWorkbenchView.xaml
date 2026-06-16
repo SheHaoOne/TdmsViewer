@@ -125,7 +125,7 @@
 
                                         <TextBox Text="{Binding TextValue, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="0,0,0,0"
-                                                 Visibility="{Binding IsNumeric, Converter={StaticResource BoolVis}}"/>
+                                                 Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

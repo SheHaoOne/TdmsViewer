@@ -11,6 +11,7 @@ public sealed class AnalysisInputContext
     public required double[] Samples { get; init; }
     public required double SampleRateHz { get; init; }
     public required IReadOnlyList<AnalysisSourceSample> Sources { get; init; }
+    public IAnalysisDataAccessor? Data { get; init; }
 }
 
 public sealed class StepDefinition

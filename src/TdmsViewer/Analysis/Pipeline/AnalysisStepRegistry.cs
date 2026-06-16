@@ -14,7 +14,27 @@ public sealed class AnalysisStepRegistry
             ["Waveform"] = () => new WaveformStep(),
             ["OverallLevel"] = () => new OverallLevelStep(),
             ["AveragedSpectrum"] = () => new AveragedSpectrumStep(),
-            ["OctaveBands"] = () => new OctaveBandsStep()
+            ["OctaveBands"] = () => new OctaveBandsStep(),
+            ["TimeFrequencyMap"] = () => new TimeFrequencyMapStep(),
+            ["HilbertEnvelope"] = () => new HilbertEnvelopeStep(),
+            ["HilbertEnvelopeSpectra"] = () => new HilbertEnvelopeSpectraStep(),
+            ["HilbertEnvelopeAvgSpectra"] = () => new HilbertEnvelopeAvgSpectraStep(),
+            ["HilbertEnvelopeExFixed"] = () => new HilbertEnvelopeExFixedStep(),
+            ["HilbertEnvelopeExTracked"] = () => new HilbertEnvelopeExTrackedStep(),
+            ["MorletWavelet"] = () => new MorletWaveletStep(),
+            ["LmsMorletWavelet"] = () => new LmsMorletWaveletStep(),
+            ["ModulationSpectrum"] = () => new ModulationSpectrumStep(),
+            ["ModulationSpectrumStft"] = () => new ModulationSpectrumStftStep(),
+            ["StationaryLoudness"] = () => new StationaryLoudnessStep(),
+            ["TimeVaryingLoudness"] = () => new TimeVaryingLoudnessStep(),
+            ["StationarySharpness"] = () => new StationarySharpnessStep(),
+            ["TimeVaryingSharpness"] = () => new TimeVaryingSharpnessStep(),
+            ["Roughness"] = () => new RoughnessStep(),
+            ["FluctuationStrength"] = () => new FluctuationStrengthStep(),
+            ["Resample"] = () => new ResampleStep(),
+            ["OrderSection"] = () => new OrderSectionStep(),
+            ["RpmFrequencyMap"] = () => new RpmFrequencyMapStep(),
+            ["RpmOrderMap"] = () => new RpmOrderMapStep()
         };
     }
 

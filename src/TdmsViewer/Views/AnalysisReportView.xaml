@@ -17,9 +17,21 @@
                 <controls:BarChartCard Model="{Binding}"/>
             </Border>
         </DataTemplate>
+        <DataTemplate x:Key="HeatmapChartCardTemplate">
+            <Border Margin="10">
+                <controls:HeatmapChartCard Model="{Binding}"/>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="MetricCardTemplate">
+            <Border Margin="10">
+                <controls:MetricCard DataContext="{Binding}"/>
+            </Border>
+        </DataTemplate>
         <controls:ChartCardTemplateSelector x:Key="ChartCardTemplateSelector"
                                             LineChartTemplate="{StaticResource LineChartCardTemplate}"
-                                            BarChartTemplate="{StaticResource BarChartCardTemplate}"/>
+                                            BarChartTemplate="{StaticResource BarChartCardTemplate}"
+                                            HeatmapChartTemplate="{StaticResource HeatmapChartCardTemplate}"
+                                            MetricCardTemplate="{StaticResource MetricCardTemplate}"/>
     </UserControl.Resources>
     <ScrollViewer x:Name="ReportScrollViewer"
                   VerticalScrollBarVisibility="Auto"

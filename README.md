@@ -15,7 +15,7 @@
 | 波形图 | ScottPlot 绘制，自动降采样，支持 `wf_increment` 时间轴与缩放/平移 |
 | 数据分页 | 每页 100 条，首页 / 上一页 / 下一页 / 末页 |
 | 音频 | 将通道数据归一化后播放；可导出为 WAV（采样率取自通道属性） |
-| NVH 数据分析 | 基于 [NvhLibCSharp](https://github.com/GOLDTEAM-BORAY/NvhLibCSharp) 一键分析：时域波形、总声级、平均频谱、倍频程 |
+| NVH 数据分析 | 基于 [NvhLibCSharp](https://github.com/GOLDTEAM-BORAY/NvhLibCSharp) 一键分析：时域、频域、倍频程、包络、小波、调制谱、心理声学、阶次跟踪等 24 种算法 |
 | 分析报表 | ScottPlot 原生图表展示，支持方案保存/加载（`.tdms-analysis.json`） |
 
 ## 环境要求
@@ -69,8 +69,9 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 1. 导入 TDMS 并选择通道，单击文件名加载数据
 2. 点击工具栏 **数据分析**，在左侧勾选分析步骤
 3. 在右侧 **算法参数** 面板选择步骤并调整参数（窗函数、计权、倍频程类型等），可点击 **恢复默认** 重置当前步骤
-4. 点击 **运行分析**，自动跳转 **分析报表** 查看 ScottPlot 图表
-5. 可 **保存方案** / **加载方案** 复用算法参数（`.tdms-analysis.json`）
+4. 阶次分析步骤需配置 **转速通道名**（TDMS 中的 tacho/RPM 通道）
+5. 点击 **运行分析**，自动跳转 **分析报表** 查看 ScottPlot 图表
+6. 可 **保存方案** / **加载方案** 复用算法参数（`.tdms-analysis.json`）
 
 > 分析功能需要有效的 `BrcSignalKit.dll` 与 `license.lic`（均不随仓库分发，需手动放置于程序目录）。
 

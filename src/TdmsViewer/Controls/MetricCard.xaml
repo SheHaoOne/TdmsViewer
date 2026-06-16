@@ -1,0 +1,24 @@
+<UserControl x:Class="TdmsViewer.Controls.MetricCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinHeight="120"
+             Margin="0">
+    <Border Style="{StaticResource MacCardStyle}" Padding="16" Margin="0">
+        <StackPanel VerticalAlignment="Center">
+            <TextBlock Text="{Binding Title}"
+                       Style="{StaticResource MacCaptionStyle}"
+                       Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{Binding Value}"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           Foreground="#FF1D1D1F"
+                           VerticalAlignment="Bottom"/>
+                <TextBlock Text="{Binding Unit}"
+                           Style="{StaticResource MacSecondaryStyle}"
+                           Margin="8,0,0,4"
+                           VerticalAlignment="Bottom"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>
