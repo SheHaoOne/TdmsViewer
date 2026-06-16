@@ -82,7 +82,7 @@ public sealed class OctaveBandsStep : IAnalysisStep
         var card = new LineChartModel(
             "ob",
             "1/3 倍频程",
-            "1/3 倍频程中心频率 (Hz)",
+            "中心频率（Hz）",
             "声压级 (dB)",
             series,
             UseLogXAxis: true,

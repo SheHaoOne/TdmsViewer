@@ -59,6 +59,7 @@ public partial class LineChartCard : UserControl
                 scatter.Color = Color.FromHex(series.Color);
                 scatter.LineWidth = 1.5f;
                 scatter.ConnectStyle = ConnectStyle.StepHorizontal;
+                scatter.MarkerSize = 0;
             }
             else if (xs.Length >= 2)
             {
@@ -69,7 +70,7 @@ public partial class LineChartCard : UserControl
         }
 
         if (Model.UseLogXAxis)
-            ConfigureLogXAxis();
+            ConfigureLogXAxisFromCenters(Model.Series.SelectMany(s => s.X));
 
         PlotHost.Plot.Axes.Bottom.Label.Text = Model.XLabel;
         PlotHost.Plot.Axes.Left.Label.Text = Model.YLabel;
@@ -78,16 +79,19 @@ public partial class LineChartCard : UserControl
         PlotHost.Refresh();
     }
 
-    private void ConfigureLogXAxis()
+    private void ConfigureLogXAxisFromCenters(IEnumerable<double> centerFrequenciesHz)
     {
-        var tickGen = new NumericAutomatic
-        {
-            MinorTickGenerator = new LogDecadeMinorTickGenerator(),
-            IntegerTicksOnly = true,
-            LabelFormatter = static logValue => PlotDataHelper.FormatFrequencyLabel(Math.Pow(10, logValue))
-        };
+        var ticks = centerFrequenciesHz
+            .Where(hz => hz > 0)
+            .Distinct()
+            .OrderBy(hz => hz)
+            .Select(hz => new Tick(Math.Log10(hz), PlotDataHelper.FormatFrequencyLabel(hz)))
+            .ToArray();
 
-        PlotHost.Plot.Axes.Bottom.TickGenerator = tickGen;
+        if (ticks.Length == 0)
+            return;
+
+        PlotHost.Plot.Axes.Bottom.TickGenerator = new NumericManual(ticks);
         PlotHost.Plot.Grid.MinorLineColor = Color.FromHex("#D2D2D7").WithAlpha(0.25);
         PlotHost.Plot.Grid.MinorLineWidth = 1;
     }
