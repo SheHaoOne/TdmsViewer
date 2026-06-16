@@ -4,10 +4,10 @@
              xmlns:controls="clr-namespace:TdmsViewer.Controls">
     <UserControl.Resources>
         <DataTemplate x:Key="LineChartCardTemplate">
-            <controls:LineChartCard Model="{Binding}" Margin="4"/>
+            <controls:LineChartCard Model="{Binding}" Margin="12"/>
         </DataTemplate>
         <DataTemplate x:Key="BarChartCardTemplate">
-            <controls:BarChartCard Model="{Binding}" Margin="4"/>
+            <controls:BarChartCard Model="{Binding}" Margin="12"/>
         </DataTemplate>
         <controls:ChartCardTemplateSelector x:Key="ChartCardTemplateSelector"
                                             LineChartTemplate="{StaticResource LineChartCardTemplate}"
@@ -29,7 +29,8 @@
             </Border>
 
             <ItemsControl ItemsSource="{Binding Cards}"
-                          ItemTemplateSelector="{StaticResource ChartCardTemplateSelector}">
+                          ItemTemplateSelector="{StaticResource ChartCardTemplateSelector}"
+                          Margin="0,4,0,12">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <UniformGrid Columns="3"/>
