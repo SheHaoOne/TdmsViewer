@@ -48,12 +48,11 @@ public partial class LineChartCard : UserControl
             var sig = PlotHost.Plot.Add.SignalXY(series.X, series.Y);
             sig.Color = Color.FromHex(series.Color);
             sig.LineWidth = 1.5f;
-            sig.LegendText = series.Label;
         }
 
         PlotHost.Plot.Axes.Bottom.Label.Text = Model.XLabel;
         PlotHost.Plot.Axes.Left.Label.Text = Model.YLabel;
-        PlotHost.Plot.Legend.IsVisible = Model.Series.Count > 1;
+        PlotHost.Plot.HideLegend();
         PlotHost.Plot.Axes.AutoScale();
         PlotHost.Refresh();
     }

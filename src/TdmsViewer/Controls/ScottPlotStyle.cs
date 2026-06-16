@@ -21,6 +21,8 @@ internal static class ScottPlotStyle
         plot.Grid.MinorLineColor = Colors.Transparent;
         plot.Axes.FrameColor(GridColor);
 
+        plot.HideLegend();
+
         ApplyAxisTypography(plot.Axes.Bottom);
         ApplyAxisTypography(plot.Axes.Left);
         ApplyAxisTypography(plot.Axes.Top);

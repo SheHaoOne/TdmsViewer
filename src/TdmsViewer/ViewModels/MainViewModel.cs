@@ -412,7 +412,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             SyncSelectAllCheckbox();
             ApplyOverlayVisibility();
-            RefreshAnalysisContext();
+            RefreshAnalysisContext(refreshOverlayFiles: false);
         }
     }
 
@@ -660,10 +660,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = $"分析完成：{report.Cards.Count} 张图表";
     }
 
-    private void RefreshAnalysisContext()
+    private void RefreshAnalysisContext(bool refreshOverlayFiles = true)
     {
+        if (refreshOverlayFiles)
+            Workbench.RefreshOverlayFiles(GetAnalysisOverlayFiles());
+        else
+            Workbench.SyncSelectAllOverlayCheckbox();
+
         Workbench.RefreshChannelSummary(DescribeAnalysisTarget());
         Workbench.NotifyCanAnalyzeChanged();
+    }
+
+    private IReadOnlyList<TdmsFileListItem> GetAnalysisOverlayFiles()
+    {
+        if (SelectedChannel == null)
+            return Array.Empty<TdmsFileListItem>();
+
+        var sourcePaths = SelectedChannel.Sources
+            .Select(s => s.FilePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return LoadedFiles.Where(f => sourcePaths.Contains(f.FilePath)).ToList();
     }
 
     private bool CanAnalyze() => DescribeAnalysisTarget() != null;
