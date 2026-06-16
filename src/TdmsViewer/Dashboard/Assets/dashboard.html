@@ -71,13 +71,19 @@
     #grid {
       flex: 1;
       min-height: 0;
-      display: grid;
-      grid-template-columns: repeat(24, minmax(0, 1fr));
-      grid-auto-rows: auto;
+      display: flex;
+      flex-direction: column;
       gap: 12px;
       overflow: auto;
       padding-bottom: 4px;
-      align-content: start;
+    }
+
+    .dashboard-row {
+      display: grid;
+      grid-template-columns: repeat(24, minmax(0, 1fr));
+      gap: 12px;
+      align-items: start;
+      width: 100%;
     }
 
     .widget {
@@ -599,6 +605,38 @@
       container.appendChild(scroll);
     }
 
+    function normalizePlacement(placement) {
+      return {
+        blockId: placement.blockId ?? placement.BlockId ?? "",
+        row: Number(placement.row ?? placement.Row ?? 0),
+        col: Number(placement.col ?? placement.Col ?? 0),
+        colSpan: Number(placement.colSpan ?? placement.ColSpan ?? 12),
+        rowSpan: Number(placement.rowSpan ?? placement.RowSpan ?? 1),
+        widgetType: placement.widgetType ?? placement.WidgetType ?? "Auto"
+      };
+    }
+
+    function groupPlacementsByRow(placements) {
+      const bands = new Map();
+      placements.map(normalizePlacement).forEach(placement => {
+        if (!bands.has(placement.row)) bands.set(placement.row, []);
+        bands.get(placement.row).push(placement);
+      });
+
+      return [...bands.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([row, items]) => ({
+          row,
+          items: items.sort((a, b) => a.col - b.col)
+        }));
+    }
+
+    function appendWidgetToRow(rowEl, placement, block) {
+      const widget = renderWidget(placement, block);
+      widget.style.gridColumn = `${placement.col + 1} / span ${placement.colSpan}`;
+      rowEl.appendChild(widget);
+    }
+
     function isChartWidgetType(widgetType) {
       return widgetType === "LineChart" || widgetType === "BarChart" || widgetType === "Heatmap";
     }
@@ -610,15 +648,11 @@
     function renderWidget(placement, block) {
       const widget = document.createElement("section");
       const widgetType = resolveWidgetType(placement, block);
-      const rowSpan = isChartWidgetType(widgetType) ? 1 : Math.max(1, placement.rowSpan || 1);
 
       widget.className = "widget";
       if (isChartWidgetType(widgetType)) widget.classList.add("widget-chart");
       else if (widgetType === "KpiCard" || widgetType === "KpiGroup") widget.classList.add("widget-kpi");
       else if (widgetType === "CompareTable") widget.classList.add("widget-table");
-
-      widget.style.gridColumn = `${placement.col + 1} / span ${placement.colSpan}`;
-      widget.style.gridRow = `${placement.row + 1} / span ${rowSpan}`;
 
       const title = document.createElement("h3");
       title.className = "widget-title";
@@ -663,8 +697,8 @@
         return;
       }
 
+      grid.style.display = "flex";
       empty.style.display = "none";
-      grid.style.display = "grid";
       header.style.display = "flex";
 
       const meta = report.meta || {};
@@ -681,22 +715,30 @@
       const blockMap = new Map((report.blocks || []).map(b => [b.blockId, b]));
       const placements = (report.layout && report.layout.widgets) || [];
 
-      placements.forEach(placement => {
-        const block = blockMap.get(placement.blockId);
-        if (!block) return;
-        grid.appendChild(renderWidget(placement, block));
-      });
-
-      if (placements.length === 0) {
+      if (placements.length > 0) {
+        groupPlacementsByRow(placements).forEach(band => {
+          const rowEl = document.createElement("div");
+          rowEl.className = "dashboard-row";
+          band.items.forEach(placement => {
+            const block = blockMap.get(placement.blockId);
+            if (!block) return;
+            appendWidgetToRow(rowEl, placement, block);
+          });
+          if (rowEl.childElementCount > 0) grid.appendChild(rowEl);
+        });
+      } else {
         report.blocks.forEach((block, index) => {
-          grid.appendChild(renderWidget({
+          const rowEl = document.createElement("div");
+          rowEl.className = "dashboard-row";
+          appendWidgetToRow(rowEl, normalizePlacement({
             blockId: block.blockId,
             widgetType: block.widgetType,
             col: (index % 2) * 12,
             row: Math.floor(index / 2),
             colSpan: 12,
             rowSpan: 1
-          }, block));
+          }), block);
+          grid.appendChild(rowEl);
         });
       }
 
