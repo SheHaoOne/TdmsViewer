@@ -1,0 +1,28 @@
+<UserControl x:Class="TdmsViewer.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dashboard="clr-namespace:TdmsViewer.Dashboard.Controls">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Margin="0,0,0,12" Padding="14,12">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="分析大屏" Style="{StaticResource MacCaptionStyle}"/>
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacSecondaryStyle}" Margin="0,6,0,0"/>
+                </StackPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="导出 HTML"
+                        Style="{StaticResource MacToolbarButtonStyle}"
+                        Command="{Binding ExportHtmlCommand}"/>
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource MacCardStyle}" Padding="0">
+            <dashboard:DashboardWebView Report="{Binding CurrentReport}" />
+        </Border>
+    </Grid>
+</UserControl>

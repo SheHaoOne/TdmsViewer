@@ -1,0 +1,78 @@
+<UserControl x:Class="TdmsViewer.Views.AnalysisWorkbenchView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:TdmsViewer.ViewModels">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="分析编排" Style="{StaticResource MacCaptionStyle}"/>
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacSecondaryStyle}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MacSecondaryStyle}" Margin="0,4,0,0"
+                               Foreground="{StaticResource MacAccentBrush}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox Width="220" Margin="0,0,8,0"
+                             Text="{Binding PlanName, UpdateSourceTrigger=PropertyChanged}"
+                             ToolTip="分析方案名称（显示在报表标题）"/>
+                    <Button Content="运行分析"
+                            Style="{StaticResource MacPrimaryButtonStyle}"
+                            Command="{Binding RunAnalysisCommand}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource MacCardStyle}">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="分析步骤" Style="{StaticResource MacCaptionStyle}" Margin="0,0,0,12"/>
+                <ListBox ItemsSource="{Binding AvailableSteps}"
+                         BorderThickness="0"
+                         Background="Transparent"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:AnalysisStepItem}">
+                            <Border Padding="10,8" Margin="0,0,0,8"
+                                    Background="#FFF8F8FA"
+                                    BorderBrush="{StaticResource MacSeparatorBrush}"
+                                    BorderThickness="0.5"
+                                    CornerRadius="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0"
+                                              Style="{StaticResource MacCheckBoxStyle}"
+                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                              VerticalAlignment="Top"
+                                              Margin="0,2,12,0"/>
+                                    <StackPanel Grid.Column="1">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding DisplayName}" Style="{StaticResource MacBodyStyle}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding Category, StringFormat='  ·  {0}'}"
+                                                       Style="{StaticResource MacSecondaryStyle}"
+                                                       Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Description}"
+                                                   Style="{StaticResource MacSecondaryStyle}"
+                                                   Margin="0,4,0,0"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

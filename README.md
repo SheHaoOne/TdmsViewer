@@ -8,6 +8,8 @@
 |------|------|
 | 批量导入 | 一次选择多个 `.tdms`；拖放可追加导入；已移除原单文件「导入」 |
 | 波形叠加 | 当前选定组内，相同**通道名**的波形在同一图中叠加（ScottPlot 多色曲线 + 图例） |
+| **NVH 分析编排** | 可勾选组合时域、频谱、倍频程、SPL 等步骤，对当前通道一键运行 |
+| **分析大屏** | 应用内 Mac 风格报表大屏（ECharts），与导出 HTML 共用模板 |
 | 文件关联 | 双击 `.tdms` 加入查看会话；PowerShell 脚本注册 |
 | 组列表 | 选中文件后显示其 TDMS 组，默认选中第一组，可切换组并查看组属性 |
 | 通道列表 | 仅显示当前选定组内的通道，显示可叠加的文件数量 |
@@ -57,9 +59,19 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 
 - **.NET 8** + **WPF**
 - **[TDMSReader](https://www.nuget.org/packages/TDMSReader)** — 读取 NI TDMS 文件
+- **[NVHAlgorithmKit](https://github.com/SheHaoOne/NVHAlgorithmKit)** — NVH 信号处理（时域 / 频域 / 声学）
+- **[Microsoft WebView2](https://developer.microsoft.com/microsoft-edge/webview2/)** — 应用内分析报表大屏
 - **[NAudio](https://www.nuget.org/packages/NAudio)** — 播放与 WAV 导出
 - **[ScottPlot.WPF](https://www.nuget.org/packages/ScottPlot.WPF)** — 波形图
 - **[CommunityToolkit.Mvvm](https://www.nuget.org/packages/CommunityToolkit.Mvvm)** — MVVM
+
+## NVH 分析与报表
+
+1. 导入 TDMS，选择组与通道，单击文件名加载数据。
+2. 切换到 **分析编排**，勾选步骤后点击 **运行分析**。
+3. 自动跳转 **分析大屏** 查看报表；可 **导出 HTML**（与屏内展示一致）。
+
+分析步骤依赖通道采样率（`wf_increment` 或 `NI_SampleRate`）。
 
 ## 说明
 

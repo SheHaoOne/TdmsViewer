@@ -5,6 +5,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Models;
 using TdmsViewer.Services;
 
@@ -66,6 +67,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isFileAssociationRegistered;
 
+    [ObservableProperty]
+    private AppViewMode _selectedMode = AppViewMode.Browse;
+
     /// <summary>全选复选框：勾选则全部参与波形叠加，取消则全部不叠加。</summary>
     [ObservableProperty]
     private bool _isAllFilesOverlayChecked = true;
@@ -95,14 +99,35 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ObservableCollection<DataPageRow> PageRows { get; } = new();
     public ObservableCollection<WaveformSeries> WaveformSeries { get; } = new();
 
+    public AnalysisWorkbenchViewModel Workbench { get; }
+    public DashboardViewModel Dashboard { get; }
+
     public MainViewModel()
     {
+        Dashboard = new DashboardViewModel();
+        Workbench = new AnalysisWorkbenchViewModel(
+            () => _activeSource,
+            () => _currentChannelData,
+            () => HasFile && SelectedChannel != null && ActiveFile != null,
+            source => _tdmsService.ReadChannelData(source.FilePath, source.Channel),
+            OnAnalysisReportReady);
+
         IsFileAssociationRegistered = FileAssociationService.IsRegistered();
         _audioService.PlaybackStopped += (_, _) => IsPlaying = false;
     }
 
+    private void OnAnalysisReportReady(AnalysisReport report)
+    {
+        Dashboard.SetReport(report);
+        SelectedMode = AppViewMode.Dashboard;
+        StatusMessage = $"分析报表已生成 — {report.Meta.ChannelName}";
+    }
+
+    private void NotifyAnalysisSessionChanged() => Workbench.NotifySessionChanged();
+
     partial void OnSelectedChannelChanged(MergedChannelInfo? value)
     {
+        NotifyAnalysisSessionChanged();
         if (value != null)
             _ = LoadMergedChannelAsync(value);
     }
@@ -111,6 +136,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!_suppressActiveFileChanged)
             RefreshGroupsForActiveFile(value);
+
+        NotifyAnalysisSessionChanged();
 
         if (_suppressActiveFileChanged || value == null)
             return;
@@ -850,6 +877,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             MessageBox.Show($"导出失败：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    [RelayCommand]
+    private void SwitchMode(string modeName)
+    {
+        if (Enum.TryParse<AppViewMode>(modeName, ignoreCase: true, out var mode))
+            SelectedMode = mode;
     }
 
     [RelayCommand]
