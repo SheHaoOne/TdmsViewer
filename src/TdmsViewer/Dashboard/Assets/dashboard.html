@@ -165,6 +165,34 @@
       min-height: 140px;
     }
 
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      border-bottom: 0.5px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    .compare-table th {
+      color: var(--muted);
+      font-weight: 600;
+      background: #f8f8fa;
+    }
+
+    .compare-table tr:hover td {
+      background: #f8f8fa;
+    }
+
+    .compare-scroll {
+      overflow: auto;
+      height: 100%;
+    }
+
     .empty-state {
       flex: 1;
       display: flex;
@@ -311,6 +339,85 @@
       chart.setOption(option);
     }
 
+    function renderHeatmap(container, blockId, payload) {
+      const host = document.createElement("div");
+      host.className = "chart-host";
+      host.id = "chart-" + blockId;
+      container.appendChild(host);
+
+      const chart = echarts.init(host);
+      chartInstances.set(blockId, chart);
+
+      const values = (payload.data || []).map(d => d[2]);
+      const maxVal = values.length ? Math.max(...values) : 1;
+
+      const option = {
+        ...macChartBase(),
+        grid: { left: 56, right: 72, top: 16, bottom: 48 },
+        xAxis: {
+          type: "category",
+          data: payload.timeLabels || [],
+          splitArea: { show: true },
+          axisLabel: { color: "#86868b", fontSize: 10, rotate: 30 }
+        },
+        yAxis: {
+          type: "category",
+          data: payload.freqLabels || [],
+          splitArea: { show: true },
+          axisLabel: { color: "#86868b", fontSize: 10 }
+        },
+        visualMap: {
+          min: 0,
+          max: maxVal,
+          calculable: true,
+          orient: "vertical",
+          right: 8,
+          top: "center",
+          itemWidth: 10,
+          itemHeight: 80,
+          textStyle: { color: "#86868b", fontSize: 10 },
+          inRange: { color: ["#e8f4ff", "#66b3ff", "#007aff", "#004499"] }
+        },
+        series: [{
+          type: "heatmap",
+          data: payload.data || [],
+          emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,0.2)" } }
+        }]
+      };
+      chart.setOption(option);
+    }
+
+    function renderCompareTable(container, payload) {
+      const scroll = document.createElement("div");
+      scroll.className = "compare-scroll";
+      const table = document.createElement("table");
+      table.className = "compare-table";
+
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      (payload.columns || []).forEach(col => {
+        const th = document.createElement("th");
+        th.textContent = col;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      (payload.rows || []).forEach(row => {
+        const tr = document.createElement("tr");
+        row.forEach(cell => {
+          const td = document.createElement("td");
+          td.textContent = typeof cell === "number" ? formatValue(cell, "G4") : (cell ?? "—");
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      scroll.appendChild(table);
+      container.appendChild(scroll);
+    }
+
     function renderWidget(placement, block) {
       const widget = document.createElement("section");
       widget.className = "widget";
@@ -333,10 +440,14 @@
       else if (widgetType === "KpiGroup") renderKpiGroup(body, payload);
       else if (widgetType === "LineChart") renderLineChart(body, block.blockId, payload);
       else if (widgetType === "BarChart") renderBarChart(body, block.blockId, payload);
+      else if (widgetType === "Heatmap") renderHeatmap(body, block.blockId, payload);
+      else if (widgetType === "CompareTable") renderCompareTable(body, payload);
       else if (block.widgetType === "KpiCard") renderKpiCard(body, payload);
       else if (block.widgetType === "KpiGroup") renderKpiGroup(body, payload);
       else if (block.widgetType === "LineChart") renderLineChart(body, block.blockId, payload);
       else if (block.widgetType === "BarChart") renderBarChart(body, block.blockId, payload);
+      else if (block.widgetType === "Heatmap") renderHeatmap(body, block.blockId, payload);
+      else if (block.widgetType === "CompareTable") renderCompareTable(body, payload);
 
       return widget;
     }

@@ -5,6 +5,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Models;
 using TdmsViewer.Services;
@@ -107,20 +108,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         Dashboard = new DashboardViewModel();
         Workbench = new AnalysisWorkbenchViewModel(
             () => _activeSource,
+            () => SelectedChannel,
             () => _currentChannelData,
             () => HasFile && SelectedChannel != null && ActiveFile != null,
             source => _tdmsService.ReadChannelData(source.FilePath, source.Channel),
-            OnAnalysisReportReady);
+            OnAnalysisWorkbenchResult);
 
         IsFileAssociationRegistered = FileAssociationService.IsRegistered();
         _audioService.PlaybackStopped += (_, _) => IsPlaying = false;
     }
 
-    private void OnAnalysisReportReady(AnalysisReport report)
+    private void OnAnalysisWorkbenchResult(AnalysisWorkbenchResult result)
     {
-        Dashboard.SetReport(report);
+        Dashboard.ApplyResult(result);
         SelectedMode = AppViewMode.Dashboard;
-        StatusMessage = $"分析报表已生成 — {report.Meta.ChannelName}";
+        StatusMessage = result.AllReports.Count > 1
+            ? $"批量分析报表已生成 — {result.AllReports.Count} 个文件"
+            : $"分析报表已生成 — {result.PrimaryReport.Meta.ChannelName}";
     }
 
     private void NotifyAnalysisSessionChanged() => Workbench.NotifySessionChanged();
@@ -711,6 +715,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SelectedGroup = null;
         HasFile = false;
         SessionSummary = null;
+        Dashboard.ClearHistory();
         IsAllFilesOverlayChecked = true;
         WindowTitle = "TdmsViewer";
         StatusMessage = "请批量导入 TDMS 文件进行对比";

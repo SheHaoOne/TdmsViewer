@@ -9,26 +9,39 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Style="{StaticResource MacCardStyle}" Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel>
-                    <TextBlock Text="分析编排" Style="{StaticResource MacCaptionStyle}"/>
-                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacSecondaryStyle}" Margin="0,6,0,0" TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MacSecondaryStyle}" Margin="0,4,0,0"
-                               Foreground="{StaticResource MacAccentBrush}"/>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox Width="220" Margin="0,0,8,0"
-                             Text="{Binding PlanName, UpdateSourceTrigger=PropertyChanged}"
-                             ToolTip="分析方案名称（显示在报表标题）"/>
-                    <Button Content="运行分析"
-                            Style="{StaticResource MacPrimaryButtonStyle}"
-                            Command="{Binding RunAnalysisCommand}"/>
-                </StackPanel>
-            </Grid>
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="分析编排" Style="{StaticResource MacCaptionStyle}"/>
+                        <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacSecondaryStyle}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MacSecondaryStyle}" Margin="0,4,0,0"
+                                   Foreground="{StaticResource MacAccentBrush}"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBox Width="200" Margin="0,0,8,0"
+                                 Text="{Binding PlanName, UpdateSourceTrigger=PropertyChanged}"
+                                 ToolTip="分析方案名称（显示在报表标题）"/>
+                        <Button Content="运行分析"
+                                Style="{StaticResource MacPrimaryButtonStyle}"
+                                Command="{Binding RunAnalysisCommand}"/>
+                    </StackPanel>
+                </Grid>
+                <WrapPanel Margin="0,12,0,0">
+                    <CheckBox Style="{StaticResource MacCheckBoxStyle}"
+                              Content="批量分析当前通道的全部文件"
+                              IsChecked="{Binding IsBatchMode, Mode=TwoWay}"
+                              Margin="0,0,16,0"
+                              ToolTip="对左侧通道在所有已导入文件中的数据进行同一套分析，并生成对比表"/>
+                    <Button Content="保存方案" Style="{StaticResource MacToolbarButtonStyle}"
+                            Command="{Binding SavePlanCommand}" Margin="0,0,8,0"/>
+                    <Button Content="加载方案" Style="{StaticResource MacToolbarButtonStyle}"
+                            Command="{Binding LoadPlanCommand}"/>
+                </WrapPanel>
+            </StackPanel>
         </Border>
 
         <Border Grid.Row="1" Style="{StaticResource MacCardStyle}">

@@ -1,3 +1,5 @@
+using NVHAlgorithmKit.FrequencyDomain;
+
 namespace TdmsViewer.Analysis.Steps;
 
 internal static class AnalysisPlotHelper
@@ -22,10 +24,10 @@ internal static class AnalysisPlotHelper
         }
 
         if (index < count)
+        {
             Array.Resize(ref xs, index);
-
-        if (index < count)
             Array.Resize(ref ys, index);
+        }
 
         return (xs, ys);
     }
@@ -57,4 +59,47 @@ internal static class AnalysisPlotHelper
 
         return (xs, ys);
     }
+
+    public static (string[] TimeLabels, string[] FreqLabels, object[] HeatmapData) BuildStftHeatmap(
+        StftResult stft,
+        int maxTimeFrames = 80,
+        int maxFreqBins = 64)
+    {
+        var frameCount = stft.TimeAxis.Length;
+        var freqCount = stft.Frequencies.Length;
+        if (frameCount == 0 || freqCount == 0)
+            return (Array.Empty<string>(), Array.Empty<string>(), Array.Empty<object>());
+
+        var timeStep = Math.Max(1, frameCount / maxTimeFrames);
+        var freqStep = Math.Max(1, freqCount / maxFreqBins);
+
+        var timeLabels = new List<string>();
+        var freqLabels = new List<string>();
+        var data = new List<object>();
+
+        for (var fi = 0; fi < freqCount; fi += freqStep)
+            freqLabels.Add(FormatFrequency(stft.Frequencies[fi]));
+
+        var timeIndex = 0;
+        for (var ti = 0; ti < frameCount; ti += timeStep)
+        {
+            timeLabels.Add(stft.TimeAxis[ti].ToString("G4"));
+            var freqIndex = 0;
+            for (var fi = 0; fi < freqCount; fi += freqStep)
+            {
+                var magnitude = stft.Magnitude[ti, fi];
+                if (magnitude > 0)
+                    data.Add(new object[] { timeIndex, freqIndex, magnitude });
+
+                freqIndex++;
+            }
+
+            timeIndex++;
+        }
+
+        return (timeLabels.ToArray(), freqLabels.ToArray(), data.ToArray());
+    }
+
+    private static string FormatFrequency(double hz) =>
+        hz >= 1000 ? $"{hz / 1000:0.#}k" : hz.ToString("0");
 }

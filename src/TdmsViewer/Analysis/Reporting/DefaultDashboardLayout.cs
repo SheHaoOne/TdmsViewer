@@ -4,16 +4,39 @@ public static class DefaultDashboardLayout
 {
     public static DashboardLayout ForTemplate(string templateId, IReadOnlyCollection<string> blockIds)
     {
+        if (string.Equals(templateId, "batch-compare-light", StringComparison.OrdinalIgnoreCase))
+            return BatchCompare(blockIds);
+
         if (string.Equals(templateId, "nvh-acoustic-light", StringComparison.OrdinalIgnoreCase))
             return AcousticLight(blockIds);
 
         return AutoGrid(blockIds);
     }
 
+    private static DashboardLayout BatchCompare(IReadOnlyCollection<string> blockIds)
+    {
+        var widgets = new List<WidgetPlacement>();
+        if (blockIds.Contains("compare", StringComparer.OrdinalIgnoreCase))
+        {
+            widgets.Add(new WidgetPlacement
+            {
+                BlockId = "compare",
+                WidgetType = "CompareTable",
+                Col = 0,
+                Row = 0,
+                ColSpan = 24,
+                RowSpan = 10
+            });
+        }
+
+        return new DashboardLayout { Columns = 24, Widgets = widgets };
+    }
+
     private static DashboardLayout AcousticLight(IReadOnlyCollection<string> blockIds)
     {
         var widgets = new List<WidgetPlacement>();
         var idSet = blockIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var row = 0;
 
         if (idSet.Contains("spl"))
         {
@@ -22,7 +45,7 @@ public static class DefaultDashboardLayout
                 BlockId = "spl",
                 WidgetType = "KpiCard",
                 Col = 0,
-                Row = 0,
+                Row = row,
                 ColSpan = 6,
                 RowSpan = 2
             });
@@ -35,11 +58,13 @@ public static class DefaultDashboardLayout
                 BlockId = "td",
                 WidgetType = "KpiGroup",
                 Col = 6,
-                Row = 0,
+                Row = row,
                 ColSpan = 18,
                 RowSpan = 2
             });
         }
+
+        row += 2;
 
         if (idSet.Contains("wf"))
         {
@@ -48,10 +73,11 @@ public static class DefaultDashboardLayout
                 BlockId = "wf",
                 WidgetType = "LineChart",
                 Col = 0,
-                Row = 2,
+                Row = row,
                 ColSpan = 24,
                 RowSpan = 5
             });
+            row += 5;
         }
 
         if (idSet.Contains("sp"))
@@ -61,7 +87,7 @@ public static class DefaultDashboardLayout
                 BlockId = "sp",
                 WidgetType = "LineChart",
                 Col = 0,
-                Row = 7,
+                Row = row,
                 ColSpan = 12,
                 RowSpan = 6
             });
@@ -74,7 +100,36 @@ public static class DefaultDashboardLayout
                 BlockId = "ob",
                 WidgetType = "BarChart",
                 Col = 12,
-                Row = 7,
+                Row = row,
+                ColSpan = 12,
+                RowSpan = 6
+            });
+        }
+
+        if (idSet.Contains("sp") || idSet.Contains("ob"))
+            row += 6;
+
+        if (idSet.Contains("psd"))
+        {
+            widgets.Add(new WidgetPlacement
+            {
+                BlockId = "psd",
+                WidgetType = "LineChart",
+                Col = 0,
+                Row = row,
+                ColSpan = 12,
+                RowSpan = 6
+            });
+        }
+
+        if (idSet.Contains("stft"))
+        {
+            widgets.Add(new WidgetPlacement
+            {
+                BlockId = "stft",
+                WidgetType = "Heatmap",
+                Col = 12,
+                Row = row,
                 ColSpan = 12,
                 RowSpan = 6
             });
