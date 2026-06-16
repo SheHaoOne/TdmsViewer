@@ -339,15 +339,15 @@
             </Grid>
         </Grid>
 
-        <views:AnalysisWorkbenchView Grid.Row="1"
-                                     Margin="16"
-                                     DataContext="{Binding Workbench}"
-                                     Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeAnalysis}}"/>
+        <Grid Grid.Row="1" Margin="16"
+              Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeAnalysis}}">
+            <views:AnalysisWorkbenchView DataContext="{Binding Workbench}"/>
+        </Grid>
 
-        <views:AnalysisReportView Grid.Row="1"
-                                  Margin="16"
-                                  DataContext="{Binding Report}"
-                                  Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeReport}}"/>
+        <Grid Grid.Row="1" Margin="16"
+              Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeReport}}">
+            <views:AnalysisReportView DataContext="{Binding Report}"/>
+        </Grid>
 
         <!-- Status bar -->
         <Border Grid.Row="2" Background="#F2FFFFFF" BorderBrush="{StaticResource MacSeparatorBrush}" BorderThickness="0,0.5,0,0" Padding="16,8">
