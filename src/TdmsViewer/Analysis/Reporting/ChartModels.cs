@@ -36,6 +36,7 @@ public sealed class LineSeriesData
     public required double[] X { get; init; }
     public required double[] Y { get; init; }
     public string Color { get; init; } = "#007AFF";
+    public string? SourceKey { get; init; }
 }
 
 public sealed record LineChartModel(
@@ -51,6 +52,7 @@ public sealed class BarSeriesData
     public required string Label { get; init; }
     public required double[] Values { get; init; }
     public string Color { get; init; } = "#007AFF";
+    public string? SourceKey { get; init; }
 }
 
 public sealed record BarChartModel(
@@ -61,8 +63,16 @@ public sealed record BarChartModel(
     double[] Categories,
     double[] Values,
     string[]? CategoryLabels = null,
-    IReadOnlyList<BarSeriesData>? Series = null
+    IReadOnlyList<BarSeriesData>? Series = null,
+    string? SourceKey = null
 ) : ChartCardModel(Id, Title, ChartKind.Bar);
+
+public sealed class ReportSourceInfo
+{
+    public required string FilePath { get; init; }
+    public required string FileName { get; init; }
+    public required string Color { get; init; }
+}
 
 public sealed record MetricCardModel(
     string Id,
@@ -76,4 +86,5 @@ public sealed class AnalysisReportModel
 {
     public required ReportMeta Meta { get; init; }
     public required IReadOnlyList<ChartCardModel> Cards { get; init; }
+    public required IReadOnlyList<ReportSourceInfo> Sources { get; init; }
 }

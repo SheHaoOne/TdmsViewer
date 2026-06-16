@@ -412,7 +412,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             SyncSelectAllCheckbox();
             ApplyOverlayVisibility();
-            RefreshAnalysisContext(refreshOverlayFiles: false);
         }
     }
 
@@ -660,34 +659,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
         StatusMessage = $"分析完成：{report.Cards.Count} 张图表";
     }
 
-    private void RefreshAnalysisContext(bool refreshOverlayFiles = true)
+    private void RefreshAnalysisContext()
     {
-        if (refreshOverlayFiles)
-            Workbench.RefreshOverlayFiles(GetAnalysisOverlayFiles());
-        else
-            Workbench.SyncSelectAllOverlayCheckbox();
-
         Workbench.RefreshChannelSummary(DescribeAnalysisTarget());
         Workbench.NotifyCanAnalyzeChanged();
-    }
-
-    private IReadOnlyList<TdmsFileListItem> GetAnalysisOverlayFiles()
-    {
-        if (SelectedChannel == null)
-            return Array.Empty<TdmsFileListItem>();
-
-        var sourcePaths = SelectedChannel.Sources
-            .Select(s => s.FilePath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        return LoadedFiles.Where(f => sourcePaths.Contains(f.FilePath)).ToList();
     }
 
     private bool CanAnalyze() => DescribeAnalysisTarget() != null;
 
     private AnalysisTargetDescription? DescribeAnalysisTarget()
     {
-        var sources = GetVisibleAnalysisSources();
+        var sources = GetAllAnalysisSources();
         if (sources.Count == 0)
             return null;
 
@@ -718,22 +700,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private async Task<AnalysisInputContext?> LoadAnalysisInputAsync() =>
         await Task.Run(BuildAnalysisInput);
 
-    private IReadOnlyList<ChannelSourceRef> GetVisibleAnalysisSources()
+    private IReadOnlyList<ChannelSourceRef> GetAllAnalysisSources()
     {
         if (SelectedChannel == null)
             return Array.Empty<ChannelSourceRef>();
 
-        var visiblePaths = LoadedFiles
-            .Where(f => f.IsVisibleOnPlot)
-            .Select(f => f.FilePath)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-        if (visiblePaths.Count == 0 && ActiveFile != null)
-            visiblePaths.Add(ActiveFile.FilePath);
-
-        return SelectedChannel.Sources
-            .Where(s => visiblePaths.Contains(s.FilePath))
-            .ToList();
+        return SelectedChannel.Sources.ToList();
     }
 
     private int GetKnownSampleCount(ChannelSourceRef source)
@@ -748,7 +720,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private AnalysisInputContext? BuildAnalysisInput()
     {
-        var sources = GetVisibleAnalysisSources();
+        var sources = GetAllAnalysisSources();
         if (sources.Count == 0)
             return null;
 

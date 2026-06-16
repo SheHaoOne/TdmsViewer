@@ -56,7 +56,8 @@ public sealed class OverallLevelStep : IAnalysisStep
                 Label = source.Label,
                 X = xs,
                 Y = ys,
-                Color = source.Color
+                Color = source.Color,
+                SourceKey = source.FilePath
             });
         }
 

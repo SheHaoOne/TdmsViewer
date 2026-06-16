@@ -19,7 +19,6 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
     private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
-    private bool _suppressOverlaySelectAllSync;
 
     public AnalysisWorkbenchViewModel(
         Func<Task<AnalysisInputContext?>> loadAnalysisInputAsync,
@@ -60,46 +59,15 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     [ObservableProperty]
     private string? _channelSummary;
 
-    /// <summary>勾选后当前通道下全部文件参与图表叠加。</summary>
-    [ObservableProperty]
-    private bool _isAllOverlayChecked = true;
-
     public ObservableCollection<AnalysisStepItem> AvailableSteps { get; } = new();
-
-    public ObservableCollection<TdmsFileListItem> OverlayFiles { get; } = new();
-
-    partial void OnIsAllOverlayCheckedChanged(bool value)
-    {
-        if (_suppressOverlaySelectAllSync)
-            return;
-
-        foreach (var file in OverlayFiles)
-            file.IsVisibleOnPlot = value;
-    }
-
-    public void RefreshOverlayFiles(IEnumerable<TdmsFileListItem> files)
-    {
-        OverlayFiles.Clear();
-        foreach (var file in files)
-            OverlayFiles.Add(file);
-
-        SyncSelectAllOverlayCheckbox();
-    }
-
-    public void SyncSelectAllOverlayCheckbox()
-    {
-        _suppressOverlaySelectAllSync = true;
-        IsAllOverlayChecked = OverlayFiles.Count > 0 && OverlayFiles.All(f => f.IsVisibleOnPlot);
-        _suppressOverlaySelectAllSync = false;
-    }
 
     public void RefreshChannelSummary(AnalysisTargetDescription? target)
     {
         ChannelSummary = target == null
-            ? "请先选择通道并勾选要叠加分析的文件"
+            ? "请先选择通道"
             : target.SourceCount <= 1
                 ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点"
-                : $"{target.ChannelName} · {target.SourceCount} 个文件叠加 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
+                : $"{target.ChannelName} · {target.SourceCount} 个文件 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]

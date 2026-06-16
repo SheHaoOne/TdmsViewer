@@ -1,4 +1,5 @@
 using TdmsViewer.Analysis.Contracts;
+using TdmsViewer.Analysis.Reporting;
 
 namespace TdmsViewer.Analysis.Reporting;
 
@@ -15,7 +16,8 @@ internal static class AnalysisChartBuilder
                 Label = source.Label,
                 X = xs,
                 Y = ys,
-                Color = source.Color
+                Color = source.Color,
+                SourceKey = source.FilePath
             });
         }
 

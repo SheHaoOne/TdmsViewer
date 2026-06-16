@@ -65,7 +65,15 @@ public sealed class PipelineRunner
                 GeneratedAt = DateTime.Now,
                 PlanName = plan.Name
             },
-            Cards = cards
+            Cards = cards,
+            Sources = input.Sources
+                .Select(s => new ReportSourceInfo
+                {
+                    FilePath = s.FilePath,
+                    FileName = s.FileName,
+                    Color = s.Color
+                })
+                .ToList()
         };
     }
 }

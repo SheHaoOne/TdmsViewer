@@ -74,7 +74,8 @@ public sealed class OctaveBandsStep : IAnalysisStep
             {
                 Label = source.Label,
                 Values = bandLevels,
-                Color = source.Color
+                Color = source.Color,
+                SourceKey = source.FilePath
             });
         }
 
@@ -89,7 +90,8 @@ public sealed class OctaveBandsStep : IAnalysisStep
                 "声压级 (dB)",
                 bandCenters,
                 barSeries[0].Values,
-                labels)
+                labels,
+                SourceKey: input.Sources[0].FilePath)
             : new BarChartModel(
                 "ob",
                 "1/3 倍频程",
