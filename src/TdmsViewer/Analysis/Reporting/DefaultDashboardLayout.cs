@@ -25,7 +25,7 @@ public static class DefaultDashboardLayout
                 Col = 0,
                 Row = 0,
                 ColSpan = 24,
-                RowSpan = 10
+                RowSpan = 1
             });
         }
 
@@ -47,7 +47,7 @@ public static class DefaultDashboardLayout
                 Col = 0,
                 Row = row,
                 ColSpan = 6,
-                RowSpan = 2
+                RowSpan = 1
             });
         }
 
@@ -60,11 +60,12 @@ public static class DefaultDashboardLayout
                 Col = 6,
                 Row = row,
                 ColSpan = 18,
-                RowSpan = 2
+                RowSpan = 1
             });
         }
 
-        row += 2;
+        if (idSet.Contains("spl") || idSet.Contains("td"))
+            row++;
 
         if (idSet.Contains("wf"))
         {
@@ -75,9 +76,9 @@ public static class DefaultDashboardLayout
                 Col = 0,
                 Row = row,
                 ColSpan = 24,
-                RowSpan = 5
+                RowSpan = 1
             });
-            row += 5;
+            row++;
         }
 
         if (idSet.Contains("sp"))
@@ -89,7 +90,7 @@ public static class DefaultDashboardLayout
                 Col = 0,
                 Row = row,
                 ColSpan = 12,
-                RowSpan = 6
+                RowSpan = 1
             });
         }
 
@@ -102,12 +103,12 @@ public static class DefaultDashboardLayout
                 Col = 12,
                 Row = row,
                 ColSpan = 12,
-                RowSpan = 6
+                RowSpan = 1
             });
         }
 
         if (idSet.Contains("sp") || idSet.Contains("ob"))
-            row += 6;
+            row++;
 
         if (idSet.Contains("psd"))
         {
@@ -118,7 +119,7 @@ public static class DefaultDashboardLayout
                 Col = 0,
                 Row = row,
                 ColSpan = 12,
-                RowSpan = 6
+                RowSpan = 1
             });
         }
 
@@ -131,7 +132,7 @@ public static class DefaultDashboardLayout
                 Col = 12,
                 Row = row,
                 ColSpan = 12,
-                RowSpan = 6
+                RowSpan = 1
             });
         }
 
@@ -153,14 +154,14 @@ public static class DefaultDashboardLayout
                 Col = col,
                 Row = row,
                 ColSpan = 12,
-                RowSpan = 4
+                RowSpan = 1
             });
 
             col += 12;
             if (col >= 24)
             {
                 col = 0;
-                row += 4;
+                row++;
             }
         }
 
