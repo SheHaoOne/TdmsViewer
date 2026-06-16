@@ -44,7 +44,9 @@ public sealed record LineChartModel(
     string Title,
     string XLabel,
     string YLabel,
-    IReadOnlyList<LineSeriesData> Series
+    IReadOnlyList<LineSeriesData> Series,
+    bool UseLogXAxis = false,
+    bool UseStepLine = false
 ) : ChartCardModel(Id, Title, ChartKind.Line);
 
 public sealed class BarSeriesData

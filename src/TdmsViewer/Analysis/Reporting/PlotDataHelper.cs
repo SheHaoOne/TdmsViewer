@@ -78,4 +78,10 @@ internal static class PlotDataHelper
             _ => (int)calcValue
         };
     }
+
+    public static string FormatFrequencyLabel(double hz) =>
+        hz >= 1000 ? $"{hz / 1000:0.#}k" : hz.ToString("0");
+
+    public static double[] ToLog10Axis(double[] values) =>
+        values.Select(v => v > 0 ? Math.Log10(v) : double.NaN).ToArray();
 }

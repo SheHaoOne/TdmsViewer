@@ -38,9 +38,7 @@ public sealed class OctaveBandsStep : IAnalysisStep
         var linearScale = new ScaleOptions(Scale.Linear, 1);
         var dbScale = new ScaleOptions(Scale.Db, referenceValue);
 
-        double[]? bandCenters = null;
-        string[]? labels = null;
-        var barSeries = new List<BarSeriesData>(input.Sources.Count);
+        var series = new List<LineSeriesData>(input.Sources.Count);
 
         foreach (var source in input.Sources)
         {
@@ -68,43 +66,28 @@ public sealed class OctaveBandsStep : IAnalysisStep
                 out _,
                 out _);
 
-            bandCenters ??= centers;
-            labels ??= centers.Select(FormatFrequency).ToArray();
-            barSeries.Add(new BarSeriesData
+            series.Add(new LineSeriesData
             {
                 Label = source.Label,
-                Values = bandLevels,
+                X = centers,
+                Y = bandLevels,
                 Color = source.Color,
                 SourceKey = source.FilePath
             });
         }
 
-        if (bandCenters == null || labels == null || barSeries.Count == 0)
+        if (series.Count == 0)
             return Task.FromResult<IReadOnlyList<ChartCardModel>>([]);
 
-        ChartCardModel card = barSeries.Count == 1
-            ? new BarChartModel(
-                "ob",
-                "1/3 倍频程",
-                "中心频率 (Hz)",
-                "声压级 (dB)",
-                bandCenters,
-                barSeries[0].Values,
-                labels,
-                SourceKey: input.Sources[0].FilePath)
-            : new BarChartModel(
-                "ob",
-                "1/3 倍频程",
-                "中心频率 (Hz)",
-                "声压级 (dB)",
-                bandCenters,
-                barSeries[0].Values,
-                labels,
-                barSeries);
+        var card = new LineChartModel(
+            "ob",
+            "1/3 倍频程",
+            "1/3 倍频程中心频率 (Hz)",
+            "声压级 (dB)",
+            series,
+            UseLogXAxis: true,
+            UseStepLine: true);
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }
-
-    private static string FormatFrequency(double hz) =>
-        hz >= 1000 ? $"{hz / 1000:0.#}k" : hz.ToString("0");
 }
