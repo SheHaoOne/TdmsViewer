@@ -20,7 +20,7 @@
     <None Update="BrcSignalKit.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="LIC-*.lic">
+    <None Update="LIC-20260514-6ce5c125.lic">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -13,7 +13,7 @@ namespace TdmsViewer.ViewModels;
 
 public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 {
-    private readonly Func<AnalysisInputContext?> _getAnalysisInput;
+    private readonly Func<Task<AnalysisInputContext?>> _loadAnalysisInputAsync;
     private readonly Func<bool> _canAnalyze;
     private readonly Action<AnalysisReportModel> _onReportReady;
     private readonly AnalysisStepRegistry _registry = new();
@@ -21,11 +21,11 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
 
     public AnalysisWorkbenchViewModel(
-        Func<AnalysisInputContext?> getAnalysisInput,
+        Func<Task<AnalysisInputContext?>> loadAnalysisInputAsync,
         Func<bool> canAnalyze,
         Action<AnalysisReportModel> onReportReady)
     {
-        _getAnalysisInput = getAnalysisInput;
+        _loadAnalysisInputAsync = loadAnalysisInputAsync;
         _canAnalyze = canAnalyze;
         _onReportReady = onReportReady;
         _runner = new PipelineRunner(_registry);
@@ -61,18 +61,17 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
     public ObservableCollection<AnalysisStepItem> AvailableSteps { get; } = new();
 
-    public void RefreshChannelSummary(AnalysisInputContext? input)
+    public void RefreshChannelSummary(AnalysisTargetDescription? target)
     {
-        ChannelSummary = input == null
+        ChannelSummary = target == null
             ? "请先选择通道并单击文件名加载数据"
-            : $"{input.FileName} / {input.GroupName} / {input.ChannelName} · {input.SampleRateHz:N0} Hz · {input.Samples.Length:N0} 点";
+            : $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]
     private async Task RunAnalysisAsync()
     {
-        var input = _getAnalysisInput();
-        if (input == null)
+        if (!_canAnalyze())
         {
             MessageBox.Show("请先选择通道并加载数据。", "数据分析", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
@@ -90,7 +89,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         var plan = BuildPlanFromUi();
         IsRunning = true;
-        StatusMessage = "正在分析…";
+        StatusMessage = "正在读取数据并分析…";
         ProgressText = null;
 
         try
@@ -100,9 +99,14 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 ProgressText = $"({p.CompletedSteps + 1}/{p.TotalSteps}) {p.CurrentStepName}";
             });
 
-            var report = await Task.Run(
-                () => _runner.RunAsync(plan, input, progress),
-                CancellationToken.None);
+            var report = await Task.Run(async () =>
+            {
+                var input = await _loadAnalysisInputAsync().ConfigureAwait(false);
+                if (input == null)
+                    throw new InvalidOperationException("无法读取通道数据。");
+
+                return await _runner.RunAsync(plan, input, progress).ConfigureAwait(false);
+            });
 
             StatusMessage = $"分析完成，共 {report.Cards.Count} 张图表";
             _onReportReady(report);
@@ -183,18 +187,21 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
     private AnalysisPlan BuildPlanFromUi()
     {
+        var currentSteps = _currentPlan.Steps.ToDictionary(s => s.StepType, StringComparer.OrdinalIgnoreCase);
         var defaultSteps = AnalysisPlan.CreateDefault().Steps.ToDictionary(s => s.StepType, StringComparer.OrdinalIgnoreCase);
         var steps = new List<AnalysisPlanStep>();
 
         foreach (var item in AvailableSteps)
         {
-            defaultSteps.TryGetValue(item.StepType, out var template);
+            currentSteps.TryGetValue(item.StepType, out var current);
+            defaultSteps.TryGetValue(item.StepType, out var defaults);
+
             steps.Add(new AnalysisPlanStep
             {
-                Id = template?.Id ?? item.StepType.ToLowerInvariant(),
+                Id = current?.Id ?? defaults?.Id ?? item.StepType.ToLowerInvariant(),
                 StepType = item.StepType,
                 Enabled = item.IsEnabled,
-                Parameters = template?.Parameters ?? new Dictionary<string, object?>()
+                Parameters = ResolveParameters(current, defaults)
             });
         }
 
@@ -203,6 +210,19 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             Name = PlanName,
             Steps = steps
         };
+    }
+
+    private static IReadOnlyDictionary<string, object?> ResolveParameters(
+        AnalysisPlanStep? current,
+        AnalysisPlanStep? defaults)
+    {
+        if (current?.Parameters is { Count: > 0 })
+            return current.Parameters;
+
+        if (defaults?.Parameters is { Count: > 0 })
+            return defaults.Parameters;
+
+        return new Dictionary<string, object?>();
     }
 
     private void ApplyPlan(AnalysisPlan plan)
@@ -225,4 +245,13 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         return string.IsNullOrWhiteSpace(name) ? "analysis-plan" : name.Trim();
     }
+}
+
+public sealed class AnalysisTargetDescription
+{
+    public required string FileName { get; init; }
+    public required string GroupName { get; init; }
+    public required string ChannelName { get; init; }
+    public required double SampleRateHz { get; init; }
+    public required int SampleCount { get; init; }
 }

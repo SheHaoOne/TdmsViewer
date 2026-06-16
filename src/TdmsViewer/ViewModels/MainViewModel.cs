@@ -110,11 +110,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         Report = new AnalysisReportViewModel();
         Workbench = new AnalysisWorkbenchViewModel(
-            TryBuildAnalysisInput,
-            CanRunAnalysis,
+            LoadAnalysisInputAsync,
+            CanAnalyze,
             OnAnalysisReportReady);
 
         NvhLicenseService.TryLoad();
+        RefreshAnalysisContext();
     }
 
     partial void OnSelectedChannelChanged(MergedChannelInfo? value)
@@ -660,25 +661,66 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void RefreshAnalysisContext()
     {
-        Workbench.RefreshChannelSummary(TryBuildAnalysisInput());
+        Workbench.RefreshChannelSummary(DescribeAnalysisTarget());
         Workbench.NotifyCanAnalyzeChanged();
     }
 
-    private bool CanRunAnalysis() => TryBuildAnalysisInput() != null;
+    private bool CanAnalyze() => DescribeAnalysisTarget() != null;
 
-    private AnalysisInputContext? TryBuildAnalysisInput()
+    private AnalysisTargetDescription? DescribeAnalysisTarget()
+    {
+        var source = TryResolveAnalysisSource();
+        if (source == null)
+            return null;
+
+        var sampleCount = GetKnownSampleCount(source);
+        if (sampleCount <= 0)
+            return null;
+
+        var sampleRate = source.Channel.SampleRateHz ?? 44100;
+        return new AnalysisTargetDescription
+        {
+            FileName = source.FileName,
+            GroupName = source.Channel.GroupName,
+            ChannelName = source.Channel.ChannelName,
+            SampleRateHz = sampleRate,
+            SampleCount = sampleCount
+        };
+    }
+
+    private async Task<AnalysisInputContext?> LoadAnalysisInputAsync()
+    {
+        var source = TryResolveAnalysisSource();
+        if (source == null)
+            return null;
+
+        return await Task.Run(() => BuildAnalysisInput(source));
+    }
+
+    private ChannelSourceRef? TryResolveAnalysisSource()
     {
         if (SelectedChannel == null || ActiveFile == null)
             return null;
 
-        var source = ResolveSourceForFile(ActiveFile);
-        if (source == null)
-            return null;
+        return ResolveSourceForFile(ActiveFile);
+    }
 
+    private int GetKnownSampleCount(ChannelSourceRef source)
+    {
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
+            return _currentChannelData.Length;
+
+        return source.Channel.SampleCount > int.MaxValue
+            ? int.MaxValue
+            : (int)source.Channel.SampleCount;
+    }
+
+    private AnalysisInputContext? BuildAnalysisInput(ChannelSourceRef source)
+    {
         double[] samples;
         if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
         {
-            samples = _currentChannelData;
+            samples = _currentChannelData.ToArray();
         }
         else
         {
