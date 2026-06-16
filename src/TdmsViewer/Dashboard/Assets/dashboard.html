@@ -73,7 +73,7 @@
       min-height: 0;
       display: grid;
       grid-template-columns: repeat(24, minmax(0, 1fr));
-      grid-auto-rows: minmax(120px, auto);
+      grid-auto-rows: minmax(160px, auto);
       gap: 12px;
       overflow: auto;
       padding-bottom: 4px;
@@ -103,6 +103,28 @@
       flex: 1;
       min-height: 0;
       position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .widget-body.has-chart {
+      overflow: visible;
+    }
+
+    .chart-frame {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      max-height: 100%;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .chart-host {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
     }
 
     .kpi-card {
@@ -158,12 +180,6 @@
       font-size: 18px;
       font-weight: 600;
       color: var(--text);
-    }
-
-    .chart-host {
-      width: 100%;
-      height: 100%;
-      min-height: 140px;
     }
 
     .compare-table {
@@ -241,7 +257,7 @@
       return {
         backgroundColor: "transparent",
         textStyle: { fontFamily: "Segoe UI, PingFang SC, Microsoft YaHei UI, sans-serif", color: "#1d1d1f" },
-        grid: { left: 48, right: 16, top: 24, bottom: 36 },
+        grid: { left: 72, right: 20, top: 36, bottom: 52, containLabel: false },
         xAxis: {
           axisLine: { lineStyle: { color: "#d2d2d7" } },
           axisLabel: { color: "#86868b", fontSize: 11 },
@@ -257,8 +273,100 @@
           backgroundColor: "#ffffff",
           borderColor: "#d2d2d7",
           textStyle: { color: "#1d1d1f", fontSize: 12 }
+        },
+        toolbox: {
+          right: 8,
+          top: 0,
+          itemSize: 14,
+          feature: {
+            restore: { title: "重置" },
+            dataZoom: { title: { zoom: "框选缩放", back: "还原缩放" } }
+          }
         }
       };
+    }
+
+    function calcLeftMargin(label) {
+      const text = label || "";
+      return Math.min(120, Math.max(72, text.length * 11 + 40));
+    }
+
+    function buildAxisNameStyle() {
+      return { color: "#86868b", fontSize: 11, fontWeight: 500 };
+    }
+
+    function buildValueAxisZoom(mode) {
+      const slider = {
+        type: "slider",
+        xAxisIndex: 0,
+        height: 18,
+        bottom: 6,
+        borderColor: "#d2d2d7",
+        fillerColor: "rgba(0,122,255,0.12)",
+        handleStyle: { color: "#007aff" },
+        textStyle: { color: "#86868b", fontSize: 10 }
+      };
+
+      if (mode === "both") {
+        return [
+          {
+            type: "inside",
+            xAxisIndex: 0,
+            yAxisIndex: 0,
+            filterMode: "none",
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+            moveOnMouseWheel: false
+          },
+          slider
+        ];
+      }
+
+      const zoom = [
+        {
+          type: "inside",
+          xAxisIndex: 0,
+          filterMode: "none",
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: true,
+          moveOnMouseWheel: false
+        },
+        slider
+      ];
+
+      if (mode === "y") {
+        zoom.push({
+          type: "inside",
+          yAxisIndex: 0,
+          filterMode: "none",
+          zoomOnMouseWheel: true,
+          moveOnMouseMove: false,
+          moveOnMouseWheel: false
+        });
+      }
+
+      return zoom;
+    }
+
+    function createChartFrame(container) {
+      container.classList.add("has-chart");
+      const frame = document.createElement("div");
+      frame.className = "chart-frame";
+      const host = document.createElement("div");
+      host.className = "chart-host";
+      frame.appendChild(host);
+      container.appendChild(frame);
+      return host;
+    }
+
+    function initChart(host, blockId) {
+      const chart = echarts.init(host, null, { renderer: "canvas" });
+      chartInstances.set(blockId, chart);
+      return chart;
+    }
+
+    function scheduleChartResize() {
+      requestAnimationFrame(() => chartInstances.forEach(c => c.resize()));
     }
 
     function renderKpiCard(container, payload) {
@@ -288,18 +396,39 @@
     }
 
     function renderLineChart(container, blockId, payload) {
-      const host = document.createElement("div");
-      host.className = "chart-host";
+      const host = createChartFrame(container);
       host.id = "chart-" + blockId;
-      container.appendChild(host);
-
-      const chart = echarts.init(host);
-      chartInstances.set(blockId, chart);
+      const chart = initChart(host, blockId);
+      const base = macChartBase();
+      const yLabel = payload.yLabel || "";
+      const xLabel = payload.xLabel || "";
 
       const option = {
-        ...macChartBase(),
-        xAxis: { ...macChartBase().xAxis, name: payload.xLabel || "", type: "value" },
-        yAxis: { ...macChartBase().yAxis, name: payload.yLabel || "", type: "value" },
+        ...base,
+        grid: {
+          ...base.grid,
+          left: calcLeftMargin(yLabel),
+          bottom: xLabel ? 58 : 48
+        },
+        dataZoom: buildValueAxisZoom("both"),
+        xAxis: {
+          ...base.xAxis,
+          name: xLabel,
+          nameLocation: "middle",
+          nameGap: 28,
+          nameTextStyle: buildAxisNameStyle(),
+          type: "value"
+        },
+        yAxis: {
+          ...base.yAxis,
+          name: yLabel,
+          nameLocation: "middle",
+          nameGap: 48,
+          nameRotate: 90,
+          nameTextStyle: buildAxisNameStyle(),
+          type: "value",
+          scale: true
+        },
         series: [{
           type: "line",
           showSymbol: false,
@@ -310,26 +439,50 @@
         }]
       };
       chart.setOption(option);
+      scheduleChartResize();
     }
 
     function renderBarChart(container, blockId, payload) {
-      const host = document.createElement("div");
-      host.className = "chart-host";
+      const host = createChartFrame(container);
       host.id = "chart-" + blockId;
-      container.appendChild(host);
-
-      const chart = echarts.init(host);
-      chartInstances.set(blockId, chart);
+      const chart = initChart(host, blockId);
+      const base = macChartBase();
+      const yLabel = payload.yLabel || "";
 
       const option = {
-        ...macChartBase(),
+        ...base,
+        grid: {
+          ...base.grid,
+          left: calcLeftMargin(yLabel),
+          bottom: 58
+        },
+        dataZoom: [
+          ...buildValueAxisZoom("x"),
+          {
+            type: "inside",
+            yAxisIndex: 0,
+            filterMode: "none",
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: false,
+            moveOnMouseWheel: false
+          }
+        ],
         xAxis: {
-          ...macChartBase().xAxis,
+          ...base.xAxis,
           type: "category",
           data: payload.categories || [],
-          axisLabel: { rotate: 35, fontSize: 10 }
+          axisLabel: { rotate: 35, fontSize: 10, color: "#86868b" }
         },
-        yAxis: { ...macChartBase().yAxis, name: payload.yLabel || "", type: "value" },
+        yAxis: {
+          ...base.yAxis,
+          name: yLabel,
+          nameLocation: "middle",
+          nameGap: 48,
+          nameRotate: 90,
+          nameTextStyle: buildAxisNameStyle(),
+          type: "value",
+          scale: true
+        },
         series: [{
           type: "bar",
           data: payload.values || [],
@@ -338,31 +491,42 @@
         }]
       };
       chart.setOption(option);
+      scheduleChartResize();
     }
 
     function renderHeatmap(container, blockId, payload) {
-      const host = document.createElement("div");
-      host.className = "chart-host";
+      const host = createChartFrame(container);
       host.id = "chart-" + blockId;
-      container.appendChild(host);
-
-      const chart = echarts.init(host);
-      chartInstances.set(blockId, chart);
-
+      const chart = initChart(host, blockId);
+      const base = macChartBase();
       const values = (payload.data || []).map(d => d[2]);
       const maxVal = values.length ? Math.max(...values) : 1;
 
       const option = {
-        ...macChartBase(),
-        grid: { left: 56, right: 72, top: 16, bottom: 48 },
+        ...base,
+        grid: { left: 72, right: 88, top: 36, bottom: 58 },
+        dataZoom: [
+          { type: "inside", xAxisIndex: 0, yAxisIndex: 0, filterMode: "none" },
+          { type: "slider", xAxisIndex: 0, height: 18, bottom: 6, borderColor: "#d2d2d7" },
+          { type: "slider", yAxisIndex: 0, width: 18, right: 6, borderColor: "#d2d2d7" }
+        ],
         xAxis: {
           type: "category",
+          name: "时间 (s)",
+          nameLocation: "middle",
+          nameGap: 28,
+          nameTextStyle: buildAxisNameStyle(),
           data: payload.timeLabels || [],
           splitArea: { show: true },
           axisLabel: { color: "#86868b", fontSize: 10, rotate: 30 }
         },
         yAxis: {
           type: "category",
+          name: "频率 (Hz)",
+          nameLocation: "middle",
+          nameGap: 56,
+          nameRotate: 90,
+          nameTextStyle: buildAxisNameStyle(),
           data: payload.freqLabels || [],
           splitArea: { show: true },
           axisLabel: { color: "#86868b", fontSize: 10 }
@@ -372,7 +536,7 @@
           max: maxVal,
           calculable: true,
           orient: "vertical",
-          right: 8,
+          right: 28,
           top: "center",
           itemWidth: 10,
           itemHeight: 80,
@@ -386,6 +550,7 @@
         }]
       };
       chart.setOption(option);
+      scheduleChartResize();
     }
 
     function renderCompareTable(container, payload) {
