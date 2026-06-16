@@ -5,6 +5,8 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis.Contracts;
+using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Models;
 using TdmsViewer.Services;
 
@@ -66,9 +68,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isFileAssociationRegistered;
 
+    [ObservableProperty]
+    private AppViewMode _currentViewMode = AppViewMode.Viewer;
+
     /// <summary>全选复选框：勾选则全部参与波形叠加，取消则全部不叠加。</summary>
     [ObservableProperty]
     private bool _isAllFilesOverlayChecked = true;
+
+    public AnalysisWorkbenchViewModel Workbench { get; }
+    public AnalysisReportViewModel Report { get; }
 
     public string PageInfo => TotalPages <= 0 ? "—" : $"第 {CurrentPage + 1} / {TotalPages} 页";
 
@@ -99,12 +107,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         IsFileAssociationRegistered = FileAssociationService.IsRegistered();
         _audioService.PlaybackStopped += (_, _) => IsPlaying = false;
+
+        Report = new AnalysisReportViewModel();
+        Workbench = new AnalysisWorkbenchViewModel(
+            TryBuildAnalysisInput,
+            CanRunAnalysis,
+            OnAnalysisReportReady);
+
+        NvhLicenseService.TryLoad();
     }
 
     partial void OnSelectedChannelChanged(MergedChannelInfo? value)
     {
         if (value != null)
             _ = LoadMergedChannelAsync(value);
+
+        RefreshAnalysisContext();
+    }
+
+    partial void OnCurrentViewModeChanged(AppViewMode value)
+    {
+        if (value == AppViewMode.Analysis)
+            RefreshAnalysisContext();
     }
 
     partial void OnActiveFileChanged(TdmsFileListItem? value)
@@ -578,6 +602,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshPage();
 
             StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点";
+            RefreshAnalysisContext();
         }
         catch (Exception ex)
         {
@@ -588,6 +613,98 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (generation == _channelLoadGeneration)
                 IsBusy = false;
         }
+    }
+
+    [RelayCommand]
+    private void OpenAnalysis()
+    {
+        if (!HasFile || SelectedChannel == null)
+        {
+            MessageBox.Show("请先导入文件并选择通道。", "数据分析", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        RefreshAnalysisContext();
+        CurrentViewMode = AppViewMode.Analysis;
+        StatusMessage = "数据分析模式";
+    }
+
+    [RelayCommand]
+    private void ShowViewer()
+    {
+        CurrentViewMode = AppViewMode.Viewer;
+        StatusMessage = SelectedChannel == null
+            ? "请批量导入 TDMS 文件进行对比"
+            : $"通道 {SelectedChannel.DisplayName}";
+    }
+
+    [RelayCommand]
+    private void ShowReport()
+    {
+        if (Report.Cards.Count == 0)
+        {
+            MessageBox.Show("请先运行分析。", "分析报表", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        CurrentViewMode = AppViewMode.Report;
+        StatusMessage = "分析报表";
+    }
+
+    private void OnAnalysisReportReady(AnalysisReportModel report)
+    {
+        Report.SetReport(report);
+        CurrentViewMode = AppViewMode.Report;
+        StatusMessage = $"分析完成：{report.Cards.Count} 张图表";
+    }
+
+    private void RefreshAnalysisContext()
+    {
+        Workbench.RefreshChannelSummary(TryBuildAnalysisInput());
+        Workbench.NotifyCanAnalyzeChanged();
+    }
+
+    private bool CanRunAnalysis() => TryBuildAnalysisInput() != null;
+
+    private AnalysisInputContext? TryBuildAnalysisInput()
+    {
+        if (SelectedChannel == null || ActiveFile == null)
+            return null;
+
+        var source = ResolveSourceForFile(ActiveFile);
+        if (source == null)
+            return null;
+
+        double[] samples;
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
+        {
+            samples = _currentChannelData;
+        }
+        else
+        {
+            try
+            {
+                samples = _tdmsService.ReadChannelData(source.FilePath, source.Channel);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        if (samples.Length == 0)
+            return null;
+
+        var sampleRate = source.Channel.SampleRateHz ?? 44100;
+        return new AnalysisInputContext
+        {
+            FilePath = source.FilePath,
+            FileName = source.FileName,
+            GroupName = source.Channel.GroupName,
+            ChannelName = source.Channel.ChannelName,
+            Samples = samples,
+            SampleRateHz = sampleRate
+        };
     }
 
     private void RefreshGroupsForActiveFile(TdmsFileListItem? file)

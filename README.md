@@ -15,6 +15,8 @@
 | 波形图 | ScottPlot 绘制，自动降采样，支持 `wf_increment` 时间轴与缩放/平移 |
 | 数据分页 | 每页 100 条，首页 / 上一页 / 下一页 / 末页 |
 | 音频 | 将通道数据归一化后播放；可导出为 WAV（采样率取自通道属性） |
+| NVH 数据分析 | 基于 [NvhLibCSharp](https://github.com/GOLDTEAM-BORAY/NvhLibCSharp) 一键分析：时域波形、总声级、平均频谱、1/3 倍频程 |
+| 分析报表 | ScottPlot 原生图表展示，支持方案保存/加载（`.tdms-analysis.json`） |
 
 ## 环境要求
 
@@ -60,6 +62,16 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 - **[NAudio](https://www.nuget.org/packages/NAudio)** — 播放与 WAV 导出
 - **[ScottPlot.WPF](https://www.nuget.org/packages/ScottPlot.WPF)** — 波形图
 - **[CommunityToolkit.Mvvm](https://www.nuget.org/packages/CommunityToolkit.Mvvm)** — MVVM
+- **NvhLibCSharp** + `BrcSignalKit.dll` — NVH 算法库（频谱、倍频程等）
+
+## NVH 数据分析
+
+1. 导入 TDMS 并选择通道，单击文件名加载数据
+2. 点击工具栏 **数据分析**，勾选步骤后 **运行分析**
+3. 自动跳转 **分析报表** 查看 ScottPlot 图表
+4. 可 **保存方案** / **加载方案** 复用算法参数
+
+> 需要有效的 `*.lic` 许可证文件（随 `BrcSignalKit.dll` 一同部署到输出目录）。
 
 ## 说明
 

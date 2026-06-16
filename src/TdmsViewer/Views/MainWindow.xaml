@@ -4,6 +4,7 @@
         xmlns:controls="clr-namespace:TdmsViewer.Controls"
         xmlns:conv="clr-namespace:TdmsViewer.Converters"
         xmlns:models="clr-namespace:TdmsViewer.Models"
+        xmlns:views="clr-namespace:TdmsViewer.Views"
         xmlns:vm="clr-namespace:TdmsViewer.ViewModels"
         Title="{Binding WindowTitle}"
         Icon="/Assets/app-icon.png"
@@ -19,6 +20,9 @@
         <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
         <conv:HexColorToBrushConverter x:Key="HexToBrush"/>
         <conv:HeightFractionConverter x:Key="HeightFraction"/>
+        <conv:AppViewModeToVisibilityConverter x:Key="ViewModeViewer" TargetMode="Viewer"/>
+        <conv:AppViewModeToVisibilityConverter x:Key="ViewModeAnalysis" TargetMode="Analysis"/>
+        <conv:AppViewModeToVisibilityConverter x:Key="ViewModeReport" TargetMode="Report"/>
 
         <DataTemplate x:Key="PropertyCardTemplate" DataType="{x:Type models:ChannelPropertyCard}">
             <Border Style="{StaticResource MacCardStyle}" Padding="14" MinWidth="160" MaxWidth="280" Margin="0,0,12,12">
@@ -110,6 +114,10 @@
                     <Button Content="停止" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding StopAudioCommand}"/>
                     <Button Content="导出 WAV" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ExportAudioCommand}"/>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
+                    <Button Content="数据分析" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding OpenAnalysisCommand}"/>
+                    <Button Content="分析报表" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowReportCommand}"/>
+                    <Button Content="返回查看" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowViewerCommand}"/>
+                    <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
                     <Button Content="关联 .tdms" Style="{StaticResource MacToolbarButtonStyle}"
                             Command="{Binding RegisterFileAssociationCommand}"
                             Visibility="{Binding IsFileAssociationRegistered, Converter={StaticResource BoolVisInvert}}"/>
@@ -125,7 +133,8 @@
         </Border>
 
         <!-- Main content -->
-        <Grid Grid.Row="1" Margin="16">
+        <Grid Grid.Row="1" Margin="16"
+              Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeViewer}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="300"/>
                 <ColumnDefinition Width="16"/>
@@ -330,6 +339,16 @@
             </Grid>
         </Grid>
 
+        <views:AnalysisWorkbenchView Grid.Row="1"
+                                     Margin="16"
+                                     DataContext="{Binding Workbench}"
+                                     Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeAnalysis}}"/>
+
+        <views:AnalysisReportView Grid.Row="1"
+                                  Margin="16"
+                                  DataContext="{Binding Report}"
+                                  Visibility="{Binding CurrentViewMode, Converter={StaticResource ViewModeReport}}"/>
+
         <!-- Status bar -->
         <Border Grid.Row="2" Background="#F2FFFFFF" BorderBrush="{StaticResource MacSeparatorBrush}" BorderThickness="0,0.5,0,0" Padding="16,8">
             <DockPanel>
@@ -343,8 +362,21 @@
         <!-- Empty state -->
         <Border Grid.Row="1"
                 Background="#CCF5F5F7"
-                Visibility="{Binding HasFile, Converter={StaticResource BoolVisInvert}}"
                 Margin="16">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding HasFile}" Value="False"/>
+                                <Condition Binding="{Binding CurrentViewMode}" Value="{x:Static vm:AppViewMode.Viewer}"/>
+                            </MultiDataTrigger.Conditions>
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </MultiDataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
                 <TextBlock Text="TdmsViewer" FontSize="28" FontWeight="Light" HorizontalAlignment="Center"/>
                 <TextBlock Text="批量导入多个 TDMS 文件，勾选文件叠加波形，单击文件名查看数据"
