@@ -15,7 +15,6 @@
                        Style="{StaticResource MacCaptionStyle}"
                        Margin="0,0,0,8"/>
             <Border Grid.Row="1"
-                    Background="{StaticResource MacSurfaceSecondaryBrush}"
                     CornerRadius="8"
                     ClipToBounds="True">
                 <ScottPlot:WpfPlot x:Name="WpfPlot"/>

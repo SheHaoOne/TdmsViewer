@@ -13,8 +13,12 @@ public partial class AnalysisReportView : UserControl
 
     private void ReportScrollViewer_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        if (IsOverChart(e.OriginalSource as DependencyObject))
-            e.Handled = true;
+        if (!IsOverChart(e.OriginalSource as DependencyObject))
+            return;
+
+        // Neutralize ScrollViewer scrolling while still letting ScottPlot receive MouseWheel for zoom.
+        var scrollViewer = (ScrollViewer)sender;
+        scrollViewer.ScrollToVerticalOffset(scrollViewer.VerticalOffset);
     }
 
     private static bool IsOverChart(DependencyObject? source)
