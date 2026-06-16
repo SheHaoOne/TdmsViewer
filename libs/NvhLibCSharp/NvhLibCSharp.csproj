@@ -16,10 +16,4 @@
     <Compile Remove="Utils\LoadData.cs" />
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="BrcSignalKit.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
 </Project>

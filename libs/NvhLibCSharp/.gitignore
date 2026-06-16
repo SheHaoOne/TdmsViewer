@@ -360,4 +360,8 @@ MigrationBackup/
 .ionide/
 
 # Fody - auto-generated XML schema
-FodyWeavers.xsdlibs/NvhLibCSharp/SampleData/
+FodyWeavers.xsd
+
+# Native NVH runtime binaries are not vendored in this repository.
+BrcSignalKit.dll
+*.lic

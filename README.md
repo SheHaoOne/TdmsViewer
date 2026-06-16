@@ -62,7 +62,7 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 - **[NAudio](https://www.nuget.org/packages/NAudio)** — 播放与 WAV 导出
 - **[ScottPlot.WPF](https://www.nuget.org/packages/ScottPlot.WPF)** — 波形图
 - **[CommunityToolkit.Mvvm](https://www.nuget.org/packages/CommunityToolkit.Mvvm)** — MVVM
-- **NvhLibCSharp** + `BrcSignalKit.dll` — NVH 算法库（频谱、倍频程等）
+- **NvhLibCSharp** — NVH 算法封装（频谱、倍频程等）；运行前需自行将 `BrcSignalKit.dll` 与 `license.lic` 放到程序输出目录
 
 ## NVH 数据分析
 
@@ -71,7 +71,7 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 3. 自动跳转 **分析报表** 查看 ScottPlot 图表
 4. 可 **保存方案** / **加载方案** 复用算法参数
 
-> 需要有效的许可证文件 `license.lic`（手动放置于程序目录）。
+> 分析功能需要有效的 `BrcSignalKit.dll` 与 `license.lic`（均不随仓库分发，需手动放置于程序目录）。
 
 ## 说明
 
