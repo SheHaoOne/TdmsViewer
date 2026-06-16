@@ -1,4 +1,5 @@
 using TdmsViewer.Analysis.Contracts;
+using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
 
 namespace TdmsViewer.Analysis.Steps;
@@ -22,12 +23,14 @@ public sealed class WaveformStep : IAnalysisStep
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        var maxPoints = StepParameters.GetInt(parameters, "maxPoints", 2000);
+
         var card = new LineChartModel(
             "wf",
             "时域波形",
             "时间 (s)",
             "幅值",
-            AnalysisChartBuilder.BuildWaveformSeries(input.Sources));
+            AnalysisChartBuilder.BuildWaveformSeries(input.Sources, maxPoints));
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

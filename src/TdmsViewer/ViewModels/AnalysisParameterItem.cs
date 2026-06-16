@@ -9,7 +9,9 @@ public sealed partial class AnalysisParameterItem : ObservableObject
 {
     public required string Key { get; init; }
     public required string DisplayName { get; init; }
-    public string? Description { get; init; }
+    [ObservableProperty]
+    private string? _description;
+
     public required AnalysisParameterKind Kind { get; init; }
     public IReadOnlyList<AnalysisChoiceOption> ChoiceOptions { get; init; } = Array.Empty<AnalysisChoiceOption>();
 
@@ -36,6 +38,8 @@ public sealed partial class AnalysisParameterItem : ObservableObject
         item.SetFromObject(definition.DefaultValue);
         return item;
     }
+
+    public void UpdateDescription(string? description) => Description = description;
 
     public void SetFromObject(object? value)
     {
@@ -105,6 +109,7 @@ public sealed partial class AnalysisParameterItem : ObservableObject
             "overlap" when number is < 0 or > 1 => $"{stepDisplayName} · {DisplayName}：请输入 0~1 之间的数值。",
             "referenceValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
             "increment" or "stepValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
+            "maxPoints" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的整数。",
             _ => null
         };
     }

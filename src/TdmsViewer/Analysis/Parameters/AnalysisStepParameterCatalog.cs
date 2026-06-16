@@ -5,6 +5,7 @@ internal static class AnalysisStepParameterCatalog
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<AnalysisParameterDefinition>> Definitions =
         new Dictionary<string, IReadOnlyList<AnalysisParameterDefinition>>(StringComparer.OrdinalIgnoreCase)
         {
+            ["Waveform"] = Waveform(),
             ["OverallLevel"] = OverallLevel(),
             ["AveragedSpectrum"] = AveragedSpectrum(),
             ["OctaveBands"] = OctaveBands()
@@ -18,6 +19,19 @@ internal static class AnalysisStepParameterCatalog
     public static IReadOnlyDictionary<string, object?> GetDefaults(string stepType) =>
         Get(stepType).ToDictionary(d => d.Key, d => (object?)d.DefaultValue, StringComparer.Ordinal);
 
+    public static string GetCalcValueDescription(string? calcType) =>
+        calcType switch
+        {
+            "FrameLength" => "帧长度 (s)",
+            "SpectrumLines" => "FFT 谱线数量",
+            _ => "频率分辨率 (Hz)"
+        };
+
+    public static string GetStepValueDescription(string? stepType) =>
+        string.Equals(stepType, "Overlap", StringComparison.OrdinalIgnoreCase)
+            ? "重叠率 (0~1)"
+            : "时间增量 (s)";
+
     public static string? GetChoiceLabel(string stepType, string key, string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -29,6 +43,11 @@ internal static class AnalysisStepParameterCatalog
         return definition?.Choices.FirstOrDefault(c =>
             string.Equals(c.Value, value, StringComparison.OrdinalIgnoreCase))?.Label;
     }
+
+    private static IReadOnlyList<AnalysisParameterDefinition> Waveform() =>
+    [
+        Int("maxPoints", "显示点数", 2000, "降采样后每条曲线最多绘制的点数")
+    ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> OverallLevel() =>
     [
@@ -59,7 +78,11 @@ internal static class AnalysisStepParameterCatalog
         Int("spectrumLines", "谱线数", 4096, "平均谱 FFT 谱线数量"),
         Double("overlap", "重叠率", 0.5, "谱图重叠比例 (0~1)"),
         Choice("octave", "倍频程", "ThirdOctave", OctaveChoices()),
-        Scientific("referenceValue", "参考值 (Pa)", 2.0e-5, "dB 换算参考声压")
+        Scientific("referenceValue", "参考值 (Pa)", 2.0e-5, "dB 换算参考声压"),
+        Choice("format", "幅值格式", "Rms", FormatChoices()),
+        Choice("average", "平均方式", "Energy", AverageChoices()),
+        Choice("window", "窗函数", "Hanning", WindowChoices()),
+        Choice("weight", "计权", "Linear", WeightChoices())
     ];
 
     private static AnalysisParameterDefinition Int(string key, string name, int value, string? description = null) =>

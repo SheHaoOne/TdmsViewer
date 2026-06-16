@@ -23,6 +23,31 @@ public sealed partial class AnalysisStepItem : ObservableObject
         Parameters.Clear();
         foreach (var definition in AnalysisStepParameterCatalog.Get(StepType))
             Parameters.Add(AnalysisParameterItem.FromDefinition(definition));
+
+        if (string.Equals(StepType, "AveragedSpectrum", StringComparison.OrdinalIgnoreCase))
+        {
+            var calcType = Parameters.FirstOrDefault(p => p.Key == "calcType");
+            var stepType = Parameters.FirstOrDefault(p => p.Key == "stepType");
+            if (calcType != null)
+                calcType.PropertyChanged += (_, _) => RefreshContextualDescriptions();
+            if (stepType != null)
+                stepType.PropertyChanged += (_, _) => RefreshContextualDescriptions();
+            RefreshContextualDescriptions();
+        }
+    }
+
+    private void RefreshContextualDescriptions()
+    {
+        if (!string.Equals(StepType, "AveragedSpectrum", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var calcType = Parameters.FirstOrDefault(p => p.Key == "calcType")?.SelectedChoice;
+        var stepType = Parameters.FirstOrDefault(p => p.Key == "stepType")?.SelectedChoice;
+
+        Parameters.FirstOrDefault(p => p.Key == "calcValue")
+            ?.UpdateDescription(AnalysisStepParameterCatalog.GetCalcValueDescription(calcType));
+        Parameters.FirstOrDefault(p => p.Key == "stepValue")
+            ?.UpdateDescription(AnalysisStepParameterCatalog.GetStepValueDescription(stepType));
     }
 
     public void ApplyParameterValues(IReadOnlyDictionary<string, object?>? values)
@@ -35,6 +60,8 @@ public sealed partial class AnalysisStepItem : ObservableObject
             else if (defaults.TryGetValue(parameter.Key, out var fallback))
                 parameter.SetFromObject(fallback);
         }
+
+        RefreshContextualDescriptions();
     }
 
     public Dictionary<string, object?> ToParameterDictionary() =>
@@ -47,6 +74,20 @@ public sealed partial class AnalysisStepItem : ObservableObject
             var error = parameter.Validate(DisplayName);
             if (error != null)
                 return error;
+        }
+
+        if (string.Equals(StepType, "AveragedSpectrum", StringComparison.OrdinalIgnoreCase))
+        {
+            var stepType = Parameters.FirstOrDefault(p => p.Key == "stepType")?.SelectedChoice;
+            var stepValue = Parameters.FirstOrDefault(p => p.Key == "stepValue");
+            if (string.Equals(stepType, "Overlap", StringComparison.OrdinalIgnoreCase)
+                && stepValue != null
+                && double.TryParse(stepValue.TextValue, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var overlap)
+                && overlap is < 0 or > 1)
+            {
+                return $"{DisplayName} · {stepValue.DisplayName}：请输入 0~1 之间的数值。";
+            }
         }
 
         return null;

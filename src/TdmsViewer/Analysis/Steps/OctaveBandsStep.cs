@@ -16,7 +16,7 @@ public sealed class OctaveBandsStep : IAnalysisStep
     public StepDefinition Definition { get; } = new()
     {
         StepType = "OctaveBands",
-        DisplayName = "1/3 倍频程",
+        DisplayName = "倍频程",
         Description = "基于平均谱的倍频程分析",
         Category = "声学"
     };
@@ -33,6 +33,10 @@ public sealed class OctaveBandsStep : IAnalysisStep
         var overlap = StepParameters.GetDouble(parameters, "overlap", 0.5);
         var referenceValue = StepParameters.GetDouble(parameters, "referenceValue", 2.0e-5);
         var octaveValue = StepParameters.GetString(parameters, "octave", "ThirdOctave");
+        var format = NvhEnumHelper.ParseFormat(StepParameters.GetString(parameters, "format", "Rms"));
+        var average = NvhEnumHelper.ParseAverage(StepParameters.GetString(parameters, "average", "Energy"));
+        var window = NvhEnumHelper.ParseWindow(StepParameters.GetString(parameters, "window", "Hanning"));
+        var weight = NvhEnumHelper.ParseWeight(StepParameters.GetString(parameters, "weight", "Linear"));
         var octave = NvhEnumHelper.ParseOctave(octaveValue);
         var chartTitle = AnalysisStepParameterCatalog.GetChoiceLabel("OctaveBands", "octave", octaveValue) ?? "倍频程";
 
@@ -53,16 +57,16 @@ public sealed class OctaveBandsStep : IAnalysisStep
                 calcOpt,
                 stepOpt,
                 linearScale,
-                Format.Rms,
-                Average.Energy,
-                Window.Hanning,
-                Weight.Linear);
+                format,
+                average,
+                window,
+                weight);
 
             var frequencyStep = source.SampleRateHz / 2.0 / spectrumLines;
             var bandLevels = Nvh.Octave(
                 spectra,
                 frequencyStep,
-                Window.Hanning,
+                window,
                 octave,
                 dbScale,
                 out var centers,
