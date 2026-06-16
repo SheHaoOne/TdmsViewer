@@ -4,16 +4,19 @@
              xmlns:controls="clr-namespace:TdmsViewer.Controls">
     <UserControl.Resources>
         <DataTemplate x:Key="LineChartCardTemplate">
-            <controls:LineChartCard Model="{Binding}"/>
+            <controls:LineChartCard Model="{Binding}" Margin="4"/>
         </DataTemplate>
         <DataTemplate x:Key="BarChartCardTemplate">
-            <controls:BarChartCard Model="{Binding}"/>
+            <controls:BarChartCard Model="{Binding}" Margin="4"/>
         </DataTemplate>
         <controls:ChartCardTemplateSelector x:Key="ChartCardTemplateSelector"
                                             LineChartTemplate="{StaticResource LineChartCardTemplate}"
                                             BarChartTemplate="{StaticResource BarChartCardTemplate}"/>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,8,0,0">
+    <ScrollViewer x:Name="ReportScrollViewer"
+                  VerticalScrollBarVisibility="Auto"
+                  Padding="0,8,0,0"
+                  PreviewMouseWheel="ReportScrollViewer_PreviewMouseWheel">
         <StackPanel>
             <Border Style="{StaticResource MacCardStyle}" Padding="16" Margin="0,0,0,12">
                 <StackPanel>
@@ -26,7 +29,13 @@
             </Border>
 
             <ItemsControl ItemsSource="{Binding Cards}"
-                          ItemTemplateSelector="{StaticResource ChartCardTemplateSelector}"/>
+                          ItemTemplateSelector="{StaticResource ChartCardTemplateSelector}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="3"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -9,6 +9,8 @@ internal static class ScottPlotStyle
 
     public static void ApplyMacTheme(Plot plot)
     {
+        ScottPlotFontSetup.Apply(plot);
+
         plot.FigureBackground.Color = Colors.Transparent;
         plot.DataBackground.Color = PlotBgColor;
         plot.Grid.MajorLineColor = GridColor.WithAlpha(0.6);
