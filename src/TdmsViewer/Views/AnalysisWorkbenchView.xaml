@@ -71,8 +71,20 @@
         <Border Grid.Column="2" Style="{StaticResource MacCardStyle}" Padding="20">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
-                    <TextBlock Text="算法参数"
-                               Style="{StaticResource MacCaptionStyle}"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="算法参数"
+                                   Style="{StaticResource MacCaptionStyle}"/>
+                        <Button Grid.Column="1"
+                                Content="恢复默认"
+                                Style="{StaticResource MacToolbarButtonStyle}"
+                                Padding="10,4"
+                                Command="{Binding ResetStepParametersCommand}"
+                                Visibility="{Binding CanEditParameters, Converter={StaticResource BoolVis}}"/>
+                    </Grid>
                     <TextBlock Text="{Binding SelectedStep.DisplayName, TargetNullValue='请选择一个分析步骤'}"
                                Style="{StaticResource MacBodyStyle}"
                                Margin="0,6,0,0"/>
@@ -104,8 +116,10 @@
                                                    Margin="0,2,0,8"
                                                    TextWrapping="Wrap"/>
 
-                                        <ComboBox ItemsSource="{Binding Choices}"
-                                                  SelectedItem="{Binding SelectedChoice, Mode=TwoWay}"
+                                        <ComboBox ItemsSource="{Binding ChoiceOptions}"
+                                                  DisplayMemberPath="Label"
+                                                  SelectedValuePath="Value"
+                                                  SelectedValue="{Binding SelectedChoice, Mode=TwoWay}"
                                                   Margin="0,0,0,0"
                                                   Visibility="{Binding IsChoice, Converter={StaticResource BoolVis}}"/>
 

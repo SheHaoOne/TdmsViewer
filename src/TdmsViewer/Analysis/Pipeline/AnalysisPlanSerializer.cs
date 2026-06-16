@@ -67,9 +67,7 @@ public static class AnalysisPlanSerializer
             Id = step.Id,
             StepType = step.StepType,
             Enabled = step.Enabled,
-            Parameters = step.Parameters?.ToDictionary(
-                pair => pair.Key,
-                pair => (object?)pair.Value) ?? new Dictionary<string, object?>()
+            Parameters = AnalysisPlanParameterConverter.FromJsonElements(step.Parameters)
         }).ToList()
     };
 }

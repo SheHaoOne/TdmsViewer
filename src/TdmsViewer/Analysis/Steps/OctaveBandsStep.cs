@@ -2,6 +2,7 @@ using NvhLibCSharp;
 using NvhLibCSharp.Enums;
 using NvhLibCSharp.Options;
 using TdmsViewer.Analysis.Contracts;
+using TdmsViewer.Analysis.Parameters;
 using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Services;
@@ -31,7 +32,9 @@ public sealed class OctaveBandsStep : IAnalysisStep
         var spectrumLines = StepParameters.GetInt(parameters, "spectrumLines", 4096);
         var overlap = StepParameters.GetDouble(parameters, "overlap", 0.5);
         var referenceValue = StepParameters.GetDouble(parameters, "referenceValue", 2.0e-5);
-        var octave = NvhEnumHelper.ParseOctave(StepParameters.GetString(parameters, "octave", "ThirdOctave"));
+        var octaveValue = StepParameters.GetString(parameters, "octave", "ThirdOctave");
+        var octave = NvhEnumHelper.ParseOctave(octaveValue);
+        var chartTitle = AnalysisStepParameterCatalog.GetChoiceLabel("OctaveBands", "octave", octaveValue) ?? "倍频程";
 
         var calcOpt = new SpectraCalcOptions(SpectraCalcType.SpectrumLines, spectrumLines);
         var stepOpt = new SpectraStepOptions(SpectraStepType.Overlap, overlap);
@@ -81,7 +84,7 @@ public sealed class OctaveBandsStep : IAnalysisStep
 
         var card = new LineChartModel(
             "ob",
-            "1/3 倍频程",
+            chartTitle,
             "中心频率（Hz）",
             "声压级 (dB)",
             series,

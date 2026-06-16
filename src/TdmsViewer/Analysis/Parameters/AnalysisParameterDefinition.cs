@@ -7,5 +7,5 @@ public sealed class AnalysisParameterDefinition
     public string? Description { get; init; }
     public required AnalysisParameterKind Kind { get; init; }
     public required object DefaultValue { get; init; }
-    public IReadOnlyList<string> Choices { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<AnalysisChoiceOption> Choices { get; init; } = Array.Empty<AnalysisChoiceOption>();
 }

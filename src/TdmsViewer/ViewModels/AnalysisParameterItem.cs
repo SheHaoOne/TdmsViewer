@@ -11,7 +11,7 @@ public sealed partial class AnalysisParameterItem : ObservableObject
     public required string DisplayName { get; init; }
     public string? Description { get; init; }
     public required AnalysisParameterKind Kind { get; init; }
-    public IReadOnlyList<string> Choices { get; init; } = Array.Empty<string>();
+    public IReadOnlyList<AnalysisChoiceOption> ChoiceOptions { get; init; } = Array.Empty<AnalysisChoiceOption>();
 
     [ObservableProperty]
     private string _textValue = string.Empty;
@@ -31,7 +31,7 @@ public sealed partial class AnalysisParameterItem : ObservableObject
             DisplayName = definition.DisplayName,
             Description = definition.Description,
             Kind = definition.Kind,
-            Choices = definition.Choices
+            ChoiceOptions = definition.Choices
         };
         item.SetFromObject(definition.DefaultValue);
         return item;
@@ -43,7 +43,9 @@ public sealed partial class AnalysisParameterItem : ObservableObject
 
         if (Kind == AnalysisParameterKind.Choice)
         {
-            SelectedChoice = value?.ToString() ?? Choices.FirstOrDefault();
+            var text = value?.ToString();
+            SelectedChoice = ChoiceOptions.FirstOrDefault(c => string.Equals(c.Value, text, StringComparison.OrdinalIgnoreCase))?.Value
+                             ?? ChoiceOptions.FirstOrDefault()?.Value;
             return;
         }
 
@@ -60,18 +62,51 @@ public sealed partial class AnalysisParameterItem : ObservableObject
     public object? ToObject()
     {
         if (Kind == AnalysisParameterKind.Choice)
-            return SelectedChoice ?? Choices.FirstOrDefault();
+            return SelectedChoice ?? ChoiceOptions.FirstOrDefault()?.Value;
 
         if (Kind == AnalysisParameterKind.Integer)
         {
             return int.TryParse(TextValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
                 ? parsed
-                : 0;
+                : null;
         }
 
         return double.TryParse(TextValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
             ? number
-            : 0.0;
+            : null;
+    }
+
+    public string? Validate(string stepDisplayName)
+    {
+        if (Kind == AnalysisParameterKind.Choice)
+        {
+            if (string.IsNullOrWhiteSpace(SelectedChoice))
+                return $"{stepDisplayName} · {DisplayName}：请选择一个选项。";
+
+            if (ChoiceOptions.All(c => !string.Equals(c.Value, SelectedChoice, StringComparison.OrdinalIgnoreCase)))
+                return $"{stepDisplayName} · {DisplayName}：选项无效。";
+
+            return null;
+        }
+
+        if (Kind == AnalysisParameterKind.Integer)
+        {
+            if (!int.TryParse(TextValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value <= 0)
+                return $"{stepDisplayName} · {DisplayName}：请输入大于 0 的整数。";
+
+            return null;
+        }
+
+        if (!double.TryParse(TextValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var number))
+            return $"{stepDisplayName} · {DisplayName}：请输入有效数值。";
+
+        return Key switch
+        {
+            "overlap" when number is < 0 or > 1 => $"{stepDisplayName} · {DisplayName}：请输入 0~1 之间的数值。",
+            "referenceValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
+            "increment" or "stepValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
+            _ => null
+        };
     }
 
     private static object? NormalizeValue(object? value) =>

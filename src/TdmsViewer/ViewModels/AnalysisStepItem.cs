@@ -39,4 +39,16 @@ public sealed partial class AnalysisStepItem : ObservableObject
 
     public Dictionary<string, object?> ToParameterDictionary() =>
         Parameters.ToDictionary(p => p.Key, p => p.ToObject(), StringComparer.Ordinal);
+
+    public string? ValidateParameters()
+    {
+        foreach (var parameter in Parameters)
+        {
+            var error = parameter.Validate(DisplayName);
+            if (error != null)
+                return error;
+        }
+
+        return null;
+    }
 }

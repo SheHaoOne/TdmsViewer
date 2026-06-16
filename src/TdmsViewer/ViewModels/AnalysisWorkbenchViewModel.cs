@@ -74,6 +74,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(CanEditParameters));
         OnPropertyChanged(nameof(ShowNoParametersMessage));
+        ResetStepParametersCommand.NotifyCanExecuteChanged();
     }
 
     public ObservableCollection<AnalysisStepItem> AvailableSteps { get; } = new();
@@ -103,6 +104,12 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 "数据分析",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateEnabledSteps(out var validationError))
+        {
+            MessageBox.Show(validationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -196,6 +203,34 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         ApplyPlan(AnalysisPlan.CreateDefault());
         StatusMessage = "已恢复默认方案";
+    }
+
+    [RelayCommand(CanExecute = nameof(CanResetStepParameters))]
+    private void ResetStepParameters()
+    {
+        if (SelectedStep == null)
+            return;
+
+        SelectedStep.ApplyParameterValues(null);
+        StatusMessage = $"已恢复「{SelectedStep.DisplayName}」默认参数";
+    }
+
+    private bool CanResetStepParameters() => SelectedStep?.HasParameters == true;
+
+    private bool TryValidateEnabledSteps(out string error)
+    {
+        foreach (var step in AvailableSteps.Where(s => s.IsEnabled && s.HasParameters))
+        {
+            var stepError = step.ValidateParameters();
+            if (stepError != null)
+            {
+                error = stepError;
+                return false;
+            }
+        }
+
+        error = string.Empty;
+        return true;
     }
 
     private bool CanRunAnalysis() => !IsRunning && _canAnalyze();
