@@ -1,7 +1,5 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Dashboard.Services;
 
@@ -30,7 +28,7 @@ public partial class DashboardWebView : UserControl
     {
         InitializeComponent();
         WebView.Visibility = Visibility.Collapsed;
-        IsVisibleChanged += OnIsVisibleChanged;
+        IsVisibleChanged += (_, _) => IsHostActive = IsVisible;
     }
 
     public AnalysisReport? Report
@@ -45,56 +43,31 @@ public partial class DashboardWebView : UserControl
         set => SetValue(IsHostActiveProperty, value);
     }
 
-    private void OnIsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
-    {
-        if (IsHostActive == IsVisible)
-            return;
-
-        IsHostActive = IsVisible;
-    }
-
     private static void OnIsHostActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is not DashboardWebView control)
             return;
 
         if (e.NewValue is true)
-            _ = control.EnsureInitializedAsync();
+            _ = control.ActivateAsync();
         else
-            control.HideWebView();
+            control.Deactivate();
     }
 
-    private static async void OnReportChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnReportChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is not DashboardWebView control)
-            return;
-
-        if (e.NewValue is not AnalysisReport report)
+        if (d is not DashboardWebView control || e.NewValue is not AnalysisReport report)
             return;
 
         if (!control.IsHostActive)
             return;
 
-        await control.EnsureInitializedAsync().ConfigureAwait(true);
-
-        if (!control._initialized)
-            return;
-
-        try
-        {
-            await control._bridge.RenderReportAsync(report).ConfigureAwait(true);
-            control.PlaceholderText.Visibility = Visibility.Collapsed;
-        }
-        catch (Exception ex)
-        {
-            control.PlaceholderText.Text = $"报表渲染失败：{ex.Message}";
-            control.PlaceholderText.Visibility = Visibility.Visible;
-        }
+        _ = control.RenderReportAsync(report);
     }
 
-    private async Task EnsureInitializedAsync()
+    private async Task ActivateAsync()
     {
-        if (_initialized || !IsHostActive)
+        if (!IsHostActive)
             return;
 
         try
@@ -107,9 +80,9 @@ public partial class DashboardWebView : UserControl
             _initialized = true;
 
             if (Report != null)
-                await _bridge.RenderReportAsync(Report).ConfigureAwait(true);
-
-            PlaceholderText.Visibility = Visibility.Collapsed;
+                await RenderReportAsync(Report).ConfigureAwait(true);
+            else
+                PlaceholderText.Visibility = Visibility.Collapsed;
         }
         catch (Exception ex)
         {
@@ -119,7 +92,27 @@ public partial class DashboardWebView : UserControl
         }
     }
 
-    private void HideWebView()
+    private async Task RenderReportAsync(AnalysisReport report)
+    {
+        if (!IsHostActive)
+            return;
+
+        try
+        {
+            if (!_initialized)
+                await ActivateAsync().ConfigureAwait(true);
+
+            await _bridge.RenderReportAsync(report).ConfigureAwait(true);
+            PlaceholderText.Visibility = Visibility.Collapsed;
+        }
+        catch (Exception ex)
+        {
+            PlaceholderText.Text = $"报表渲染失败：{ex.Message}";
+            PlaceholderText.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void Deactivate()
     {
         WebView.Visibility = Visibility.Collapsed;
         PlaceholderText.Visibility = Visibility.Collapsed;

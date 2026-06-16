@@ -126,8 +126,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnAnalysisWorkbenchResult(AnalysisWorkbenchResult result)
     {
-        Dashboard.ApplyResult(result);
         SelectedMode = AppViewMode.Dashboard;
+        Dashboard.ApplyResult(result);
         StatusMessage = result.AllReports.Count > 1
             ? $"批量分析报表已生成 — {result.AllReports.Count} 个文件"
             : $"分析报表已生成 — {result.PrimaryReport.Meta.ChannelName}";
