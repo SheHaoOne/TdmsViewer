@@ -136,6 +136,22 @@ public static class DefaultDashboardLayout
             });
         }
 
+        if (idSet.Contains("psd") || idSet.Contains("stft"))
+            row++;
+
+        if (idSet.Contains("cwt"))
+        {
+            widgets.Add(new WidgetPlacement
+            {
+                BlockId = "cwt",
+                WidgetType = "Heatmap",
+                Col = 0,
+                Row = row,
+                ColSpan = 24,
+                RowSpan = 1
+            });
+        }
+
         return new DashboardLayout { Columns = 24, Widgets = widgets };
     }
 

@@ -727,19 +727,30 @@
           if (rowEl.childElementCount > 0) grid.appendChild(rowEl);
         });
       } else {
+        const fallbackBands = new Map();
         report.blocks.forEach((block, index) => {
-          const rowEl = document.createElement("div");
-          rowEl.className = "dashboard-row";
-          appendWidgetToRow(rowEl, normalizePlacement({
-            blockId: block.blockId,
-            widgetType: block.widgetType,
-            col: (index % 2) * 12,
-            row: Math.floor(index / 2),
-            colSpan: 12,
-            rowSpan: 1
-          }), block);
-          grid.appendChild(rowEl);
+          const row = Math.floor(index / 2);
+          if (!fallbackBands.has(row)) fallbackBands.set(row, []);
+          fallbackBands.get(row).push({ block, col: (index % 2) * 12 });
         });
+
+        [...fallbackBands.entries()]
+          .sort((a, b) => a[0] - b[0])
+          .forEach(([, items]) => {
+            const rowEl = document.createElement("div");
+            rowEl.className = "dashboard-row";
+            items.forEach(({ block, col }) => {
+              appendWidgetToRow(rowEl, normalizePlacement({
+                blockId: block.blockId,
+                widgetType: block.widgetType,
+                col,
+                row: 0,
+                colSpan: 12,
+                rowSpan: 1
+              }), block);
+            });
+            grid.appendChild(rowEl);
+          });
       }
 
       scheduleChartResize();

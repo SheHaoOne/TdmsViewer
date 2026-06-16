@@ -17,7 +17,8 @@ public sealed class AnalysisStepRegistry
             ["OctaveBands"] = () => new OctaveBandsStep(),
             ["Spl"] = () => new SplStep(),
             ["Psd"] = () => new PsdStep(),
-            ["Stft"] = () => new StftStep()
+            ["Stft"] = () => new StftStep(),
+            ["Wavelet"] = () => new WaveletStep()
         };
     }
 

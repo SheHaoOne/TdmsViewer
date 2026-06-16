@@ -386,7 +386,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     }
 
     private static bool IsStepEnabledByDefault(string stepType) =>
-        stepType is not ("Psd" or "Stft");
+        stepType is not ("Psd" or "Stft" or "Wavelet");
 
     private static string SanitizeFileName(string name)
     {

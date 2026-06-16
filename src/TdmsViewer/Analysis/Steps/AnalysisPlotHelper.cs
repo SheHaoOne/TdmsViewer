@@ -1,4 +1,5 @@
 using NVHAlgorithmKit.FrequencyDomain;
+using NVHAlgorithmKit.Transform;
 
 namespace TdmsViewer.Analysis.Steps;
 
@@ -88,6 +89,46 @@ internal static class AnalysisPlotHelper
             for (var fi = 0; fi < freqCount; fi += freqStep)
             {
                 var magnitude = stft.Magnitude[ti, fi];
+                if (magnitude > 0)
+                    data.Add(new object[] { timeIndex, freqIndex, magnitude });
+
+                freqIndex++;
+            }
+
+            timeIndex++;
+        }
+
+        return (timeLabels.ToArray(), freqLabels.ToArray(), data.ToArray());
+    }
+
+    public static (string[] TimeLabels, string[] FreqLabels, object[] HeatmapData) BuildCwtHeatmap(
+        CwtResult cwt,
+        int maxTimeFrames = 80,
+        int maxFreqBins = 64)
+    {
+        var frameCount = cwt.TimeAxis.Length;
+        var freqCount = cwt.Frequencies.Length;
+        if (frameCount == 0 || freqCount == 0)
+            return (Array.Empty<string>(), Array.Empty<string>(), Array.Empty<object>());
+
+        var timeStep = Math.Max(1, frameCount / maxTimeFrames);
+        var freqStep = Math.Max(1, freqCount / maxFreqBins);
+
+        var timeLabels = new List<string>();
+        var freqLabels = new List<string>();
+        var data = new List<object>();
+
+        for (var fi = 0; fi < freqCount; fi += freqStep)
+            freqLabels.Add(FormatFrequency(cwt.Frequencies[fi]));
+
+        var timeIndex = 0;
+        for (var ti = 0; ti < frameCount; ti += timeStep)
+        {
+            timeLabels.Add(cwt.TimeAxis[ti].ToString("G4"));
+            var freqIndex = 0;
+            for (var fi = 0; fi < freqCount; fi += freqStep)
+            {
+                var magnitude = cwt.Magnitude[fi, ti];
                 if (magnitude > 0)
                     data.Add(new object[] { timeIndex, freqIndex, magnitude });
 

@@ -11,7 +11,8 @@ public static class AnalysisStepIds
             ["Spectrum"] = "sp",
             ["OctaveBands"] = "ob",
             ["Psd"] = "psd",
-            ["Stft"] = "stft"
+            ["Stft"] = "stft",
+            ["Wavelet"] = "cwt"
         };
 
     public static string GetBlockId(string stepType) =>
