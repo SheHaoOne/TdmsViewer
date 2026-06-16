@@ -34,24 +34,38 @@ public sealed class OverallLevelStep : IAnalysisStep
         var weight = NvhEnumHelper.ParseWeight(StepParameters.GetString(parameters, "weight", "A"));
         var scale = NvhEnumHelper.ParseScale(StepParameters.GetString(parameters, "scale", "Db"));
 
-        var signal = NvhSignalAdapter.ToSignal(input.Samples, input.SampleRateHz);
-        var values = Nvh.OverallLevelSpectral(
-            signal,
-            spectrumLines,
-            increment,
-            referenceValue,
-            window,
-            weight,
-            scale,
-            out var timeAxis);
+        var series = new List<LineSeriesData>(input.Sources.Count);
+        foreach (var source in input.Sources)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
-        var (xs, ys) = PlotDataHelper.DownsampleXY(timeAxis, values);
+            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var values = Nvh.OverallLevelSpectral(
+                signal,
+                spectrumLines,
+                increment,
+                referenceValue,
+                window,
+                weight,
+                scale,
+                out var timeAxis);
+
+            var (xs, ys) = PlotDataHelper.DownsampleXY(timeAxis, values);
+            series.Add(new LineSeriesData
+            {
+                Label = source.Label,
+                X = xs,
+                Y = ys,
+                Color = source.Color
+            });
+        }
+
         var card = new LineChartModel(
             "spl",
             "总声级曲线",
             "时间 (s)",
             scale == Scale.Db ? "声压级 (dB)" : "幅值",
-            [new LineSeriesData { Label = "Overall Level", X = xs, Y = ys, Color = "#FF9500" }]);
+            series);
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

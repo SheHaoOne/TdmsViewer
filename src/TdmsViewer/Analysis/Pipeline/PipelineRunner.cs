@@ -61,7 +61,7 @@ public sealed class PipelineRunner
                 ChannelName = input.ChannelName,
                 GroupName = input.GroupName,
                 SampleRateHz = input.SampleRateHz,
-                SampleCount = input.Samples.Length,
+                SampleCount = input.Sources.Max(s => s.Samples.Length),
                 GeneratedAt = DateTime.Now,
                 PlanName = plan.Name
             },

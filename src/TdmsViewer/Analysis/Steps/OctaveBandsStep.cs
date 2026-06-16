@@ -33,44 +33,72 @@ public sealed class OctaveBandsStep : IAnalysisStep
         var referenceValue = StepParameters.GetDouble(parameters, "referenceValue", 2.0e-5);
         var octave = NvhEnumHelper.ParseOctave(StepParameters.GetString(parameters, "octave", "ThirdOctave"));
 
-        var signal = NvhSignalAdapter.ToSignal(input.Samples, input.SampleRateHz);
         var calcOpt = new SpectraCalcOptions(SpectraCalcType.SpectrumLines, spectrumLines);
         var stepOpt = new SpectraStepOptions(SpectraStepType.Overlap, overlap);
         var linearScale = new ScaleOptions(Scale.Linear, 1);
+        var dbScale = new ScaleOptions(Scale.Db, referenceValue);
 
-        var spectra = Nvh.AveragedSpectrum(
-            signal,
-            calcOpt,
-            stepOpt,
-            linearScale,
-            Format.Rms,
-            Average.Energy,
-            Window.Hanning,
-            Weight.Linear);
+        double[]? bandCenters = null;
+        string[]? labels = null;
+        var barSeries = new List<BarSeriesData>(input.Sources.Count);
 
-        var frequencyStep = input.SampleRateHz / 2.0 / spectrumLines;
-        var bandLevels = Nvh.Octave(
-            spectra,
-            frequencyStep,
-            Window.Hanning,
-            octave,
-            new ScaleOptions(Scale.Db, referenceValue),
-            out var bandCenters,
-            out _,
-            out _);
+        foreach (var source in input.Sources)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
-        var labels = bandCenters
-            .Select(FormatFrequency)
-            .ToArray();
+            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var spectra = Nvh.AveragedSpectrum(
+                signal,
+                calcOpt,
+                stepOpt,
+                linearScale,
+                Format.Rms,
+                Average.Energy,
+                Window.Hanning,
+                Weight.Linear);
 
-        var card = new BarChartModel(
-            "ob",
-            "1/3 倍频程",
-            "中心频率 (Hz)",
-            "声压级 (dB)",
-            bandCenters,
-            bandLevels,
-            labels);
+            var frequencyStep = source.SampleRateHz / 2.0 / spectrumLines;
+            var bandLevels = Nvh.Octave(
+                spectra,
+                frequencyStep,
+                Window.Hanning,
+                octave,
+                dbScale,
+                out var centers,
+                out _,
+                out _);
+
+            bandCenters ??= centers;
+            labels ??= centers.Select(FormatFrequency).ToArray();
+            barSeries.Add(new BarSeriesData
+            {
+                Label = source.Label,
+                Values = bandLevels,
+                Color = source.Color
+            });
+        }
+
+        if (bandCenters == null || labels == null || barSeries.Count == 0)
+            return Task.FromResult<IReadOnlyList<ChartCardModel>>([]);
+
+        ChartCardModel card = barSeries.Count == 1
+            ? new BarChartModel(
+                "ob",
+                "1/3 倍频程",
+                "中心频率 (Hz)",
+                "声压级 (dB)",
+                bandCenters,
+                barSeries[0].Values,
+                labels)
+            : new BarChartModel(
+                "ob",
+                "1/3 倍频程",
+                "中心频率 (Hz)",
+                "声压级 (dB)",
+                bandCenters,
+                barSeries[0].Values,
+                labels,
+                barSeries);
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

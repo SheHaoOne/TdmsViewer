@@ -22,13 +22,12 @@ public sealed class WaveformStep : IAnalysisStep
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var (xs, ys) = PlotDataHelper.DownsampleSeries(input.Samples, input.SampleRateHz);
         var card = new LineChartModel(
             "wf",
             "时域波形",
             "时间 (s)",
             "幅值",
-            [new LineSeriesData { Label = input.ChannelName, X = xs, Y = ys }]);
+            AnalysisChartBuilder.BuildWaveformSeries(input.Sources));
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

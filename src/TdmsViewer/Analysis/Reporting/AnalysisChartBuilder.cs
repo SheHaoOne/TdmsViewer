@@ -1,0 +1,24 @@
+using TdmsViewer.Analysis.Contracts;
+
+namespace TdmsViewer.Analysis.Reporting;
+
+internal static class AnalysisChartBuilder
+{
+    public static IReadOnlyList<LineSeriesData> BuildWaveformSeries(IReadOnlyList<AnalysisSourceSample> sources)
+    {
+        var series = new List<LineSeriesData>(sources.Count);
+        foreach (var source in sources)
+        {
+            var (xs, ys) = PlotDataHelper.DownsampleSeries(source.Samples, source.SampleRateHz);
+            series.Add(new LineSeriesData
+            {
+                Label = source.Label,
+                X = xs,
+                Y = ys,
+                Color = source.Color
+            });
+        }
+
+        return series;
+    }
+}

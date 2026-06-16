@@ -412,6 +412,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         {
             SyncSelectAllCheckbox();
             ApplyOverlayVisibility();
+            RefreshAnalysisContext();
         }
     }
 
@@ -669,40 +670,53 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private AnalysisTargetDescription? DescribeAnalysisTarget()
     {
-        var source = TryResolveAnalysisSource();
-        if (source == null)
+        var sources = GetVisibleAnalysisSources();
+        if (sources.Count == 0)
             return null;
 
-        var sampleCount = GetKnownSampleCount(source);
-        if (sampleCount <= 0)
-            return null;
+        var maxSampleCount = 0;
+        double? sampleRate = null;
+        foreach (var source in sources)
+        {
+            var sampleCount = GetKnownSampleCount(source);
+            if (sampleCount <= 0)
+                return null;
 
-        var sampleRate = source.Channel.SampleRateHz ?? 44100;
+            maxSampleCount = Math.Max(maxSampleCount, sampleCount);
+            sampleRate ??= source.Channel.SampleRateHz ?? 44100;
+        }
+
+        var channelName = SelectedChannel?.ChannelName ?? sources[0].Channel.ChannelName;
         return new AnalysisTargetDescription
         {
-            FileName = source.FileName,
-            GroupName = source.Channel.GroupName,
-            ChannelName = source.Channel.ChannelName,
-            SampleRateHz = sampleRate,
-            SampleCount = sampleCount
+            FileName = FormatAnalysisTargetLabel(sources, channelName),
+            GroupName = sources[0].Channel.GroupName,
+            ChannelName = channelName,
+            SampleRateHz = sampleRate ?? 44100,
+            SampleCount = maxSampleCount,
+            SourceCount = sources.Count
         };
     }
 
-    private async Task<AnalysisInputContext?> LoadAnalysisInputAsync()
+    private async Task<AnalysisInputContext?> LoadAnalysisInputAsync() =>
+        await Task.Run(BuildAnalysisInput);
+
+    private IReadOnlyList<ChannelSourceRef> GetVisibleAnalysisSources()
     {
-        var source = TryResolveAnalysisSource();
-        if (source == null)
-            return null;
+        if (SelectedChannel == null)
+            return Array.Empty<ChannelSourceRef>();
 
-        return await Task.Run(() => BuildAnalysisInput(source));
-    }
+        var visiblePaths = LoadedFiles
+            .Where(f => f.IsVisibleOnPlot)
+            .Select(f => f.FilePath)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    private ChannelSourceRef? TryResolveAnalysisSource()
-    {
-        if (SelectedChannel == null || ActiveFile == null)
-            return null;
+        if (visiblePaths.Count == 0 && ActiveFile != null)
+            visiblePaths.Add(ActiveFile.FilePath);
 
-        return ResolveSourceForFile(ActiveFile);
+        return SelectedChannel.Sources
+            .Where(s => visiblePaths.Contains(s.FilePath))
+            .ToList();
     }
 
     private int GetKnownSampleCount(ChannelSourceRef source)
@@ -715,39 +729,67 @@ public partial class MainViewModel : ObservableObject, IDisposable
             : (int)source.Channel.SampleCount;
     }
 
-    private AnalysisInputContext? BuildAnalysisInput(ChannelSourceRef source)
+    private AnalysisInputContext? BuildAnalysisInput()
     {
-        double[] samples;
-        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
-        {
-            samples = _currentChannelData.ToArray();
-        }
-        else
-        {
-            try
-            {
-                samples = _tdmsService.ReadChannelData(source.FilePath, source.Channel);
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        if (samples.Length == 0)
+        var sources = GetVisibleAnalysisSources();
+        if (sources.Count == 0)
             return null;
 
-        var sampleRate = source.Channel.SampleRateHz ?? 44100;
+        var samples = new List<AnalysisSourceSample>(sources.Count);
+        foreach (var source in sources)
+        {
+            var data = ReadSourceSamples(source);
+            if (data == null || data.Length == 0)
+                continue;
+
+            samples.Add(new AnalysisSourceSample
+            {
+                FilePath = source.FilePath,
+                FileName = source.FileName,
+                GroupName = source.Channel.GroupName,
+                ChannelName = source.Channel.ChannelName,
+                Samples = data,
+                SampleRateHz = source.Channel.SampleRateHz ?? 44100,
+                Label = source.FileName,
+                Color = GetPlotColorForFile(source.FilePath)
+            });
+        }
+
+        if (samples.Count == 0)
+            return null;
+
+        var primary = samples[0];
         return new AnalysisInputContext
         {
-            FilePath = source.FilePath,
-            FileName = source.FileName,
-            GroupName = source.Channel.GroupName,
-            ChannelName = source.Channel.ChannelName,
-            Samples = samples,
-            SampleRateHz = sampleRate
+            FilePath = primary.FilePath,
+            FileName = FormatAnalysisTargetLabel(sources, primary.ChannelName),
+            GroupName = primary.GroupName,
+            ChannelName = primary.ChannelName,
+            Samples = primary.Samples,
+            SampleRateHz = primary.SampleRateHz,
+            Sources = samples
         };
     }
+
+    private double[]? ReadSourceSamples(ChannelSourceRef source)
+    {
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
+            return _currentChannelData.ToArray();
+
+        try
+        {
+            return _tdmsService.ReadChannelData(source.FilePath, source.Channel);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string FormatAnalysisTargetLabel(IReadOnlyList<ChannelSourceRef> sources, string channelName) =>
+        sources.Count <= 1
+            ? sources[0].FileName
+            : $"{channelName}（{sources.Count} 个文件叠加）";
 
     private void RefreshGroupsForActiveFile(TdmsFileListItem? file)
     {

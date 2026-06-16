@@ -64,8 +64,10 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     public void RefreshChannelSummary(AnalysisTargetDescription? target)
     {
         ChannelSummary = target == null
-            ? "请先选择通道并单击文件名加载数据"
-            : $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
+            ? "请先选择通道并勾选要叠加分析的文件"
+            : target.SourceCount <= 1
+                ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点"
+                : $"{target.ChannelName} · {target.SourceCount} 个文件叠加 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]
@@ -254,4 +256,5 @@ public sealed class AnalysisTargetDescription
     public required string ChannelName { get; init; }
     public required double SampleRateHz { get; init; }
     public required int SampleCount { get; init; }
+    public int SourceCount { get; init; } = 1;
 }

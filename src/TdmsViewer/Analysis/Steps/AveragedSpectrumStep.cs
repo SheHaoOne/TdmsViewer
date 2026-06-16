@@ -38,25 +38,40 @@ public sealed class AveragedSpectrumStep : IAnalysisStep
         var weight = NvhEnumHelper.ParseWeight(StepParameters.GetString(parameters, "weight", "A"));
         var scale = NvhEnumHelper.ParseScale(StepParameters.GetString(parameters, "scale", "Db"));
 
-        var signal = NvhSignalAdapter.ToSignal(input.Samples, input.SampleRateHz);
         var calcOpt = new SpectraCalcOptions(calcType, calcValue);
         var stepOpt = new SpectraStepOptions(stepType, stepValue);
         var scaleOpt = new ScaleOptions(scale, referenceValue);
 
-        var values = Nvh.AveragedSpectrum(signal, calcOpt, stepOpt, scaleOpt, format, average, window, weight);
-        var spectrumLines = PlotDataHelper.ResolveSpectrumLines(
-            signal.DeltaTime,
-            calcType.ToString(),
-            calcValue);
-        var freqAxis = PlotDataHelper.BuildFrequencyAxis(values.Length, signal.DeltaTime, spectrumLines);
-        var (xs, ys) = PlotDataHelper.DownsampleXY(freqAxis, values);
+        var series = new List<LineSeriesData>(input.Sources.Count);
+        foreach (var source in input.Sources)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
 
+            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var values = Nvh.AveragedSpectrum(signal, calcOpt, stepOpt, scaleOpt, format, average, window, weight);
+            var spectrumLines = PlotDataHelper.ResolveSpectrumLines(
+                signal.DeltaTime,
+                calcType.ToString(),
+                calcValue);
+            var freqAxis = PlotDataHelper.BuildFrequencyAxis(values.Length, signal.DeltaTime, spectrumLines);
+            var (xs, ys) = PlotDataHelper.DownsampleXY(freqAxis, values);
+
+            series.Add(new LineSeriesData
+            {
+                Label = source.Label,
+                X = xs,
+                Y = ys,
+                Color = source.Color
+            });
+        }
+
+        var yLabel = scale == Scale.Db ? "声压级 (dB)" : "幅值";
         var card = new LineChartModel(
             "as",
             "平均频谱",
             "频率 (Hz)",
-            scale == Scale.Db ? "声压级 (dB)" : "幅值",
-            [new LineSeriesData { Label = "Spectrum", X = xs, Y = ys, Color = "#34C759" }]);
+            yLabel,
+            series);
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

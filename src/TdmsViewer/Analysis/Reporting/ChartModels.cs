@@ -46,6 +46,13 @@ public sealed record LineChartModel(
     IReadOnlyList<LineSeriesData> Series
 ) : ChartCardModel(Id, Title, ChartKind.Line);
 
+public sealed class BarSeriesData
+{
+    public required string Label { get; init; }
+    public required double[] Values { get; init; }
+    public string Color { get; init; } = "#007AFF";
+}
+
 public sealed record BarChartModel(
     string Id,
     string Title,
@@ -53,7 +60,8 @@ public sealed record BarChartModel(
     string YLabel,
     double[] Categories,
     double[] Values,
-    string[]? CategoryLabels = null
+    string[]? CategoryLabels = null,
+    IReadOnlyList<BarSeriesData>? Series = null
 ) : ChartCardModel(Id, Title, ChartKind.Bar);
 
 public sealed record MetricCardModel(
