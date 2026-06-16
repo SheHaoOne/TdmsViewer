@@ -8,7 +8,7 @@ public static class NvhLicenseService
     /// <summary>
     /// 与 NvhLibCSharp 项目一同部署到输出目录的许可证文件名。
     /// </summary>
-    public const string LicenseFileName = "LIC-20260514-6ce5c125.lic";
+    public const string LicenseFileName = "license.lic";
 
     private static bool _loaded;
     private static string? _lastError;
