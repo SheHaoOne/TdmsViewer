@@ -4,6 +4,7 @@ public sealed class TdmsFileEntry
 {
     public required string FilePath { get; init; }
     public required string FileName { get; init; }
+    public required IReadOnlyList<TdmsGroupInfo> Groups { get; init; }
     public required IReadOnlyList<TdmsChannelInfo> Channels { get; init; }
 }
 
@@ -15,7 +16,7 @@ public sealed class ChannelSourceRef
 }
 
 /// <summary>
-/// 跨文件合并后的通道（仅按通道名相同合并，不要求组名一致）。
+/// 当前选定组内、跨文件按通道名合并后的通道。
 /// </summary>
 public sealed class MergedChannelInfo
 {
