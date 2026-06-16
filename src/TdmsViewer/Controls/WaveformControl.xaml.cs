@@ -9,8 +9,6 @@ namespace TdmsViewer.Controls;
 
 public partial class WaveformControl : UserControl
 {
-    private static readonly Color GridColor = Color.FromHex("#D2D2D7");
-
     public static readonly DependencyProperty SeriesProperty =
         DependencyProperty.Register(
             nameof(Series),
@@ -50,11 +48,7 @@ public partial class WaveformControl : UserControl
 
     private void ConfigurePlotStyle()
     {
-        WpfPlot.Plot.FigureBackground.Color = Colors.Transparent;
-        WpfPlot.Plot.DataBackground.Color = Colors.Transparent;
-        WpfPlot.Plot.Grid.MajorLineColor = GridColor.WithAlpha(0.6);
-        WpfPlot.Plot.Grid.MinorLineColor = Colors.Transparent;
-        WpfPlot.Plot.Axes.Color(GridColor);
+        ScottPlotStyle.ApplyMacTheme(WpfPlot.Plot);
         WpfPlot.Plot.HideLegend();
     }
 
