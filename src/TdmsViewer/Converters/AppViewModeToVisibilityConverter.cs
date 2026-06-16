@@ -9,11 +9,21 @@ public sealed class AppViewModeToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is not AppViewMode current || parameter is not string targetText)
+        if (value is not AppViewMode current)
             return Visibility.Collapsed;
 
-        if (!Enum.TryParse<AppViewMode>(targetText, ignoreCase: true, out var target))
+        var targetText = parameter switch
+        {
+            string s => s,
+            AppViewMode mode => mode.ToString(),
+            _ => parameter?.ToString()
+        };
+
+        if (string.IsNullOrWhiteSpace(targetText) ||
+            !Enum.TryParse<AppViewMode>(targetText, ignoreCase: true, out var target))
+        {
             return Visibility.Collapsed;
+        }
 
         return current == target ? Visibility.Visible : Visibility.Collapsed;
     }

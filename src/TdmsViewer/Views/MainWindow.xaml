@@ -108,12 +108,42 @@
                     <Button Content="批量导入" Style="{StaticResource MacPrimaryButtonStyle}" Command="{Binding BatchImportCommand}"/>
                     <Button Content="清空" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ClearFilesCommand}"/>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
-                    <Button Content="数据浏览" Style="{StaticResource MacToolbarButtonStyle}"
-                            Command="{Binding SwitchModeCommand}" CommandParameter="Browse"/>
-                    <Button Content="分析编排" Style="{StaticResource MacToolbarButtonStyle}"
-                            Command="{Binding SwitchModeCommand}" CommandParameter="Workbench"/>
-                    <Button Content="分析大屏" Style="{StaticResource MacToolbarButtonStyle}"
-                            Command="{Binding SwitchModeCommand}" CommandParameter="Dashboard"/>
+                    <Button Content="数据浏览" Command="{Binding SwitchModeCommand}" CommandParameter="Browse">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MacToolbarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMode}" Value="{x:Static vm:AppViewMode.Browse}">
+                                        <Setter Property="Background" Value="{StaticResource MacAccentBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="分析编排" Command="{Binding SwitchModeCommand}" CommandParameter="Workbench">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MacToolbarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMode}" Value="{x:Static vm:AppViewMode.Workbench}">
+                                        <Setter Property="Background" Value="{StaticResource MacAccentBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="分析大屏" Command="{Binding SwitchModeCommand}" CommandParameter="Dashboard">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource MacToolbarButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedMode}" Value="{x:Static vm:AppViewMode.Dashboard}">
+                                        <Setter Property="Background" Value="{StaticResource MacAccentBrush}"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
                     <Button Content="播放音频" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding PlayAudioCommand}"/>
                     <Button Content="停止" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding StopAudioCommand}"/>
@@ -208,10 +238,11 @@
                 </Border>
             </Grid>
 
-            <!-- Detail panel -->
+            <!-- Detail panel: only one mode visible at a time -->
             <Grid Grid.Column="2">
-                <Grid Visibility="{Binding SelectedMode, Converter={StaticResource ModeVis}, ConverterParameter=Browse}">
-            <Grid x:Name="DetailPanel">
+                <Grid x:Name="BrowsePanel"
+                      Visibility="{Binding SelectedMode, Converter={StaticResource ModeVis}, ConverterParameter=Browse}">
+                    <Grid x:Name="DetailPanel">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -338,14 +369,16 @@
                                Text="勾选文件参与波形叠加；未勾选时单击文件名显示该文件波形；色条与波形颜色一致"
                                TextWrapping="Wrap"/>
                 </Grid>
-            </Grid>
+                    </Grid>
                 </Grid>
 
-                <views:AnalysisWorkbenchView DataContext="{Binding Workbench}"
-                    Visibility="{Binding SelectedMode, Converter={StaticResource ModeVis}, ConverterParameter=Workbench}"/>
+                <views:AnalysisWorkbenchView x:Name="WorkbenchPanel"
+                    DataContext="{Binding Workbench}"
+                    Visibility="{Binding DataContext.SelectedMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ModeVis}, ConverterParameter=Workbench}"/>
 
-                <views:DashboardView DataContext="{Binding Dashboard}"
-                    Visibility="{Binding SelectedMode, Converter={StaticResource ModeVis}, ConverterParameter=Dashboard}"/>
+                <views:DashboardView x:Name="DashboardPanel"
+                    DataContext="{Binding Dashboard}"
+                    Visibility="{Binding DataContext.SelectedMode, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource ModeVis}, ConverterParameter=Dashboard}"/>
             </Grid>
         </Grid>
 
@@ -359,10 +392,11 @@
             </DockPanel>
         </Border>
 
-        <!-- Empty state -->
+        <!-- Empty state (only in browse mode without files) -->
         <Border Grid.Row="1"
                 Background="#CCF5F5F7"
-                Visibility="{Binding HasFile, Converter={StaticResource BoolVisInvert}}"
+                Panel.ZIndex="1"
+                Visibility="{Binding ShowEmptyState, Converter={StaticResource BoolVis}}"
                 Margin="16">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="480">
                 <TextBlock Text="TdmsViewer" FontSize="28" FontWeight="Light" HorizontalAlignment="Center"/>

@@ -71,6 +71,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private AppViewMode _selectedMode = AppViewMode.Browse;
 
+    public bool ShowEmptyState => !HasFile && SelectedMode == AppViewMode.Browse;
+
+    partial void OnSelectedModeChanged(AppViewMode value) => OnPropertyChanged(nameof(ShowEmptyState));
+
+    partial void OnHasFileChanged(bool value) => OnPropertyChanged(nameof(ShowEmptyState));
+
     /// <summary>全选复选框：勾选则全部参与波形叠加，取消则全部不叠加。</summary>
     [ObservableProperty]
     private bool _isAllFilesOverlayChecked = true;
