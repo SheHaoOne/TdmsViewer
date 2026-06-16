@@ -32,7 +32,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         foreach (var definition in _registry.GetDefinitions())
         {
-            AvailableSteps.Add(new AnalysisStepItem
+            var item = new AnalysisStepItem
             {
                 StepType = definition.StepType,
                 DisplayName = definition.DisplayName,
@@ -40,8 +40,12 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 Category = definition.Category,
                 IsEnabled = _currentPlan.Steps.Any(s =>
                     string.Equals(s.StepType, definition.StepType, StringComparison.OrdinalIgnoreCase) && s.Enabled)
-            });
+            };
+            item.InitializeParameters();
+            AvailableSteps.Add(item);
         }
+
+        ApplyPlan(_currentPlan, selectFirstStep: true);
     }
 
     [ObservableProperty]
@@ -58,6 +62,19 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
     [ObservableProperty]
     private string? _channelSummary;
+
+    [ObservableProperty]
+    private AnalysisStepItem? _selectedStep;
+
+    public bool CanEditParameters => SelectedStep?.HasParameters == true;
+
+    public bool ShowNoParametersMessage => SelectedStep != null && !SelectedStep.HasParameters;
+
+    partial void OnSelectedStepChanged(AnalysisStepItem? value)
+    {
+        OnPropertyChanged(nameof(CanEditParameters));
+        OnPropertyChanged(nameof(ShowNoParametersMessage));
+    }
 
     public ObservableCollection<AnalysisStepItem> AvailableSteps { get; } = new();
 
@@ -203,7 +220,9 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 Id = current?.Id ?? defaults?.Id ?? item.StepType.ToLowerInvariant(),
                 StepType = item.StepType,
                 Enabled = item.IsEnabled,
-                Parameters = ResolveParameters(current, defaults)
+                Parameters = item.HasParameters
+                    ? item.ToParameterDictionary()
+                    : ResolveParameters(current, defaults)
             });
         }
 
@@ -227,7 +246,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         return new Dictionary<string, object?>();
     }
 
-    private void ApplyPlan(AnalysisPlan plan)
+    private void ApplyPlan(AnalysisPlan plan, bool selectFirstStep = false)
     {
         _currentPlan = plan;
         PlanName = plan.Name;
@@ -237,7 +256,11 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             var match = plan.Steps.FirstOrDefault(s =>
                 string.Equals(s.StepType, item.StepType, StringComparison.OrdinalIgnoreCase));
             item.IsEnabled = match?.Enabled ?? false;
+            item.ApplyParameterValues(match?.Parameters);
         }
+
+        if (selectFirstStep || SelectedStep == null)
+            SelectedStep = AvailableSteps.FirstOrDefault(s => s.HasParameters) ?? AvailableSteps.FirstOrDefault();
     }
 
     private static string SanitizeFileName(string name)
