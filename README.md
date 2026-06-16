@@ -71,7 +71,7 @@ TdmsViewer.exe "D:\data\a.tdms" "D:\data\b.tdms"
 3. 自动跳转 **分析报表** 查看 ScottPlot 图表
 4. 可 **保存方案** / **加载方案** 复用算法参数
 
-> 需要有效的许可证文件 `license.lic`（随构建输出一同部署）。
+> 需要有效的许可证文件 `license.lic`（手动放置于程序目录）。
 
 ## 说明
 

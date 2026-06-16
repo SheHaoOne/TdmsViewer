@@ -6,7 +6,7 @@ namespace TdmsViewer.Services;
 public static class NvhLicenseService
 {
     /// <summary>
-    /// 与 NvhLibCSharp 项目一同部署到输出目录的许可证文件名。
+    /// NVH 许可证文件名，需手动放置于应用程序输出目录。
     /// </summary>
     public const string LicenseFileName = "license.lic";
 
