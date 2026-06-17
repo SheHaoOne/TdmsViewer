@@ -45,14 +45,13 @@ public sealed class MorletWaveletStep : IAnalysisStep
             var maxFreq = Math.Min(maxFrequency, nyquist);
             var frequencyAxis = MathUtils.Logspace(Math.Log10(minFrequency), Math.Log10(maxFreq), bandCount).ToArray();
             var data = Nvh.MorletWaveletTransform(signal, scaleOpt, frequencyAxis, nCycles, out var timeAxis);
-            var oriented = NvhStepCharts.Transpose(data);
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"morlet-{source.FilePath}",
                 $"Morlet 小波 · {source.Label}",
                 "时间 (s)",
                 "频率 (Hz)",
-                oriented,
+                data,
                 timeAxis,
                 frequencyAxis,
                 source.FilePath));
@@ -102,14 +101,13 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
                 bandsPerOctave,
                 out var timeAxis,
                 out var frequencyAxis);
-            var oriented = NvhStepCharts.Transpose(data);
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"lms-{source.FilePath}",
                 $"LMS Morlet · {source.Label}",
                 "时间 (s)",
                 "频率 (Hz)",
-                oriented,
+                data,
                 timeAxis,
                 frequencyAxis,
                 source.FilePath));
