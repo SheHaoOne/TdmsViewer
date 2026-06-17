@@ -84,4 +84,57 @@ internal static class PlotDataHelper
 
     public static double[] ToLog10Axis(double[] values) =>
         values.Select(v => v > 0 ? Math.Log10(v) : double.NaN).ToArray();
+
+    public static double InterpolateAlongAxis(double[] axis, double[] values, double target)
+    {
+        if (axis.Length == 0 || values.Length == 0)
+            return double.NaN;
+
+        if (target <= axis[0])
+            return values[0];
+
+        if (target >= axis[^1])
+            return values[^1];
+
+        for (var i = 0; i < axis.Length - 1; i++)
+        {
+            if (target < axis[i + 1])
+            {
+                var span = axis[i + 1] - axis[i];
+                if (span <= 0)
+                    return values[i];
+
+                var ratio = (target - axis[i]) / span;
+                return values[i] + (values[i + 1] - values[i]) * ratio;
+            }
+        }
+
+        return values[^1];
+    }
+
+    public static (double[,] Values, double[] FrequencyAxis) ResampleFrequencyRowsToLinearGrid(
+        double[,] values,
+        double[] sourceFrequencyAxis,
+        double minFrequencyHz,
+        double maxFrequencyHz,
+        int targetFrequencyBins)
+    {
+        var targetFrequencyAxis = NvhLibCSharp.Utils.MathUtils
+            .Linspace(minFrequencyHz, maxFrequencyHz, targetFrequencyBins)
+            .ToArray();
+        var timeBins = values.GetLength(1);
+        var result = new double[targetFrequencyBins, timeBins];
+
+        for (var t = 0; t < timeBins; t++)
+        {
+            var column = new double[sourceFrequencyAxis.Length];
+            for (var f = 0; f < sourceFrequencyAxis.Length; f++)
+                column[f] = values[f, t];
+
+            for (var i = 0; i < targetFrequencyBins; i++)
+                result[i, t] = InterpolateAlongAxis(sourceFrequencyAxis, column, targetFrequencyAxis[i]);
+        }
+
+        return (result, targetFrequencyAxis);
+    }
 }

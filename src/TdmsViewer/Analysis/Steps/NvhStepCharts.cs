@@ -40,8 +40,9 @@ internal static class NvhStepCharts
         double[,] values,
         double[] xAxis,
         double[] yAxis,
-        string? sourceKey = null) =>
-        new(id, title, xLabel, yLabel, values, xAxis, yAxis, sourceKey);
+        string? sourceKey = null,
+        bool useLogYAxis = false) =>
+        new(id, title, xLabel, yLabel, values, xAxis, yAxis, sourceKey, UseLogYAxis: useLogYAxis);
 
     public static MetricCardModel Metric(
         string id,

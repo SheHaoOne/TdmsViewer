@@ -259,6 +259,12 @@ internal static class AnalysisStepParameterCatalog
         new() { Value = "Patient", Label = "精细" }
     ];
 
+    internal static IReadOnlyList<AnalysisChoiceOption> FrequencyAxisChoices() =>
+    [
+        new() { Value = "Linear", Label = "线性" },
+        new() { Value = "Log", Label = "对数" }
+    ];
+
     private static IReadOnlyList<AnalysisChoiceOption> OctaveChoices() =>
     [
         new() { Value = "Octave", Label = "全倍频程" },

@@ -71,7 +71,8 @@ internal static class AnalysisStepParameterCatalogExtended
     [
         Double("minFrequency", "最小频率 (Hz)", 1.0, "分析最低频率"),
         Double("maxFrequency", "最大频率 (Hz)", 1000, "分析最高频率"),
-        Int("bandCount", "频带数", 50, "对数分布频带数量"),
+        Int("bandCount", "频带数", 50, "频带数量"),
+        Choice("frequencyAxis", "频率轴", "Linear", AnalysisStepParameterCatalog.FrequencyAxisChoices(), "频率轴刻度类型"),
         Double("nCycles", "小波周期数", 5.0, "Morlet 小波循环数"),
         Scientific("referenceValue", "参考值 (Pa)", 2.0e-5, "dB 换算参考声压"),
         Choice("scale", "刻度", "Db", AnalysisStepParameterCatalog.ScaleChoices())
@@ -82,6 +83,7 @@ internal static class AnalysisStepParameterCatalogExtended
         Double("minFrequency", "最小频率 (Hz)", 10, "分析最低频率"),
         Double("maxFrequency", "最大频率 (Hz)", 1000, "分析最高频率"),
         Int("bandsPerOctave", "每倍频程频带数", 100, "对数频带分辨率"),
+        Choice("frequencyAxis", "频率轴", "Linear", AnalysisStepParameterCatalog.FrequencyAxisChoices(), "频率轴刻度类型"),
         Scientific("referenceValue", "参考值 (Pa)", 2.0e-5, "dB 换算参考声压"),
         Choice("scale", "刻度", "Db", AnalysisStepParameterCatalog.ScaleChoices())
     ];

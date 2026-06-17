@@ -31,6 +31,7 @@ public sealed class MorletWaveletStep : IAnalysisStep
         var minFrequency = StepParameters.GetDouble(parameters, "minFrequency", 1.0);
         var maxFrequency = StepParameters.GetDouble(parameters, "maxFrequency", 1000);
         var bandCount = StepParameters.GetInt(parameters, "bandCount", 50);
+        var useLogFrequencyAxis = WaveletChartHelper.UseLogFrequencyAxis(parameters);
         var nCycles = StepParameters.GetDouble(parameters, "nCycles", 5.0);
         var referenceValue = StepParameters.GetDouble(parameters, "referenceValue", 2.0e-5);
         var scale = NvhEnumHelper.ParseScale(StepParameters.GetString(parameters, "scale", "Db"));
@@ -43,7 +44,11 @@ public sealed class MorletWaveletStep : IAnalysisStep
             var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var nyquist = source.SampleRateHz / 2.0;
             var maxFreq = Math.Min(maxFrequency, nyquist);
-            var frequencyAxis = MathUtils.Logspace(Math.Log10(minFrequency), Math.Log10(maxFreq), bandCount).ToArray();
+            var frequencyAxis = WaveletChartHelper.BuildFrequencyAxis(
+                minFrequency,
+                maxFreq,
+                bandCount,
+                useLogFrequencyAxis);
             var data = Nvh.MorletWaveletTransform(signal, scaleOpt, frequencyAxis, nCycles, out var timeAxis);
 
             cards.Add(NvhStepCharts.Heatmap(
@@ -54,7 +59,8 @@ public sealed class MorletWaveletStep : IAnalysisStep
                 data,
                 timeAxis,
                 frequencyAxis,
-                source.FilePath));
+                source.FilePath,
+                useLogFrequencyAxis));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);
@@ -84,6 +90,7 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
         var minFrequency = StepParameters.GetDouble(parameters, "minFrequency", 10);
         var maxFrequency = StepParameters.GetDouble(parameters, "maxFrequency", 1000);
         var bandsPerOctave = StepParameters.GetInt(parameters, "bandsPerOctave", 100);
+        var useLogFrequencyAxis = WaveletChartHelper.UseLogFrequencyAxis(parameters);
         var referenceValue = StepParameters.GetDouble(parameters, "referenceValue", 2.0e-5);
         var scale = NvhEnumHelper.ParseScale(StepParameters.GetString(parameters, "scale", "Db"));
         var scaleOpt = new ScaleOptions(scale, referenceValue);
@@ -93,14 +100,25 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
         {
             cancellationToken.ThrowIfCancellationRequested();
             var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
+            var maxFreq = Math.Min(maxFrequency, source.SampleRateHz / 2.0);
             var data = Nvh.LmsMorletWaveletTransform(
                 signal,
                 scaleOpt,
                 minFrequency,
-                Math.Min(maxFrequency, source.SampleRateHz / 2.0),
+                maxFreq,
                 bandsPerOctave,
                 out var timeAxis,
                 out var frequencyAxis);
+
+            if (!useLogFrequencyAxis)
+            {
+                (data, frequencyAxis) = PlotDataHelper.ResampleFrequencyRowsToLinearGrid(
+                    data,
+                    frequencyAxis,
+                    minFrequency,
+                    maxFreq,
+                    frequencyAxis.Length);
+            }
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"lms-{source.FilePath}",
@@ -110,9 +128,28 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
                 data,
                 timeAxis,
                 frequencyAxis,
-                source.FilePath));
+                source.FilePath,
+                useLogFrequencyAxis));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);
     }
+}
+
+internal static class WaveletChartHelper
+{
+    public static bool UseLogFrequencyAxis(IReadOnlyDictionary<string, object?>? parameters) =>
+        string.Equals(
+            StepParameters.GetString(parameters, "frequencyAxis", "Linear"),
+            "Log",
+            StringComparison.OrdinalIgnoreCase);
+
+    public static double[] BuildFrequencyAxis(
+        double minFrequencyHz,
+        double maxFrequencyHz,
+        int bandCount,
+        bool useLogAxis) =>
+        useLogAxis
+            ? MathUtils.Logspace(Math.Log10(minFrequencyHz), Math.Log10(maxFrequencyHz), bandCount).ToArray()
+            : MathUtils.Linspace(minFrequencyHz, maxFrequencyHz, bandCount).ToArray();
 }

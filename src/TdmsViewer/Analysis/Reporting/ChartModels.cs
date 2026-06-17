@@ -98,7 +98,8 @@ public sealed record HeatmapChartModel(
     double[] YAxis,
     string? SourceKey = null,
     double? ColorMin = null,
-    double? ColorMax = null
+    double? ColorMax = null,
+    bool UseLogYAxis = false
 ) : ChartCardModel(Id, Title, ChartKind.Heatmap);
 
 public sealed class AnalysisReportModel
