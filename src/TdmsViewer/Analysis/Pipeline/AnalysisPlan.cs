@@ -18,6 +18,12 @@ public sealed class AnalysisPlan
     public HeatmapColorRange? GlobalHeatmapColorRange { get; init; }
     public IReadOnlyList<AnalysisPlanStep> Steps { get; init; } = Array.Empty<AnalysisPlanStep>();
 
+    public static AnalysisPlan CreateEmpty() => new()
+    {
+        Name = "快速声学检查",
+        Steps = Array.Empty<AnalysisPlanStep>()
+    };
+
     public static AnalysisPlan CreateDefault() => new()
     {
         Name = "快速声学检查",

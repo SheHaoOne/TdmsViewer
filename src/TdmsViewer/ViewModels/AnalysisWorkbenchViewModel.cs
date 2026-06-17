@@ -19,7 +19,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private readonly Action<AnalysisReportModel> _onReportReady;
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
-    private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
+    private AnalysisPlan _currentPlan = AnalysisPlan.CreateEmpty();
     private double _channelDurationSec;
 
     public AnalysisWorkbenchViewModel(
@@ -39,15 +39,14 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 StepType = definition.StepType,
                 DisplayName = definition.DisplayName,
                 Description = definition.Description,
-                Category = definition.Category,
-                IsEnabled = _currentPlan.Steps.Any(s =>
-                    string.Equals(s.StepType, definition.StepType, StringComparison.OrdinalIgnoreCase) && s.Enabled)
+                Category = definition.Category
             };
             item.InitializeParameters();
             AvailableSteps.Add(item);
         }
 
-        ApplyPlan(_currentPlan, selectFirstStep: true);
+        var initialPlan = AnalysisLastPlanStore.TryLoad() ?? AnalysisPlan.CreateEmpty();
+        ApplyPlan(initialPlan, selectFirstStep: true);
     }
 
     [ObservableProperty]
@@ -269,6 +268,8 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             });
 
             StatusMessage = $"分析完成，共 {report.Cards.Count} 张图表";
+            _currentPlan = plan;
+            await AnalysisLastPlanStore.SaveAsync(plan);
             _onReportReady(report);
         }
         catch (Exception ex)

@@ -166,6 +166,22 @@
         </Setter>
     </Style>
 
+    <Style x:Key="MacToolbarIconGlyphStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="MacAnalysisStepCheckBoxStyle" TargetType="CheckBox" BasedOn="{StaticResource MacCheckBoxStyle}">
+        <Setter Property="Foreground" Value="{StaticResource MacTextPrimaryBrush}"/>
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                <Setter Property="Foreground" Value="White"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
     <Style x:Key="MacIconButtonStyle" TargetType="Button">
         <Setter Property="FontFamily" Value="{StaticResource MacFont}"/>
         <Setter Property="FontSize" Value="14"/>

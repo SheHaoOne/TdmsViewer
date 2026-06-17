@@ -107,23 +107,73 @@
         <Border Grid.Row="0" Background="#F2FFFFFF" BorderBrush="{StaticResource MacSeparatorBrush}" BorderThickness="0,0,0,0.5" Padding="16,12">
             <DockPanel LastChildFill="False">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
-                    <Button Content="批量导入" Style="{StaticResource MacPrimaryButtonStyle}" Command="{Binding BatchImportCommand}"/>
-                    <Button Content="清空" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ClearFilesCommand}"/>
+                    <Button Style="{StaticResource MacPrimaryButtonStyle}" Command="{Binding BatchImportCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE8B5;"/>
+                            <TextBlock Text="批量导入" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ClearFilesCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE74D;"/>
+                            <TextBlock Text="清空" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowViewerCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE7B3;"/>
+                            <TextBlock Text="数据预览" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
-                    <Button Content="播放音频" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding PlayAudioCommand}"/>
-                    <Button Content="停止" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding StopAudioCommand}"/>
-                    <Button Content="导出 WAV" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ExportAudioCommand}"/>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding PlayAudioCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE768;"/>
+                            <TextBlock Text="播放音频" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding StopAudioCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE71A;"/>
+                            <TextBlock Text="停止" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ExportAudioCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE896;"/>
+                            <TextBlock Text="导出WAV" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
-                    <Button Content="数据分析" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding OpenAnalysisCommand}"/>
-                    <Button Content="分析报表" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowReportCommand}"/>
-                    <Button Content="返回查看" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowViewerCommand}"/>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding OpenAnalysisCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE9D9;"/>
+                            <TextBlock Text="数据分析" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ShowReportCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE9F9;"/>
+                            <TextBlock Text="分析报表" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                     <Rectangle Width="1" Height="24" Fill="{StaticResource MacSeparatorBrush}" Margin="4,0,12,0"/>
-                    <Button Content="关联 .tdms" Style="{StaticResource MacToolbarButtonStyle}"
+                    <Button Style="{StaticResource MacToolbarButtonStyle}"
                             Command="{Binding RegisterFileAssociationCommand}"
-                            Visibility="{Binding IsFileAssociationRegistered, Converter={StaticResource BoolVisInvert}}"/>
-                    <Button Content="取消关联" Style="{StaticResource MacToolbarButtonStyle}"
+                            Visibility="{Binding IsFileAssociationRegistered, Converter={StaticResource BoolVisInvert}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE71B;"/>
+                            <TextBlock Text="关联.tdms" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource MacToolbarButtonStyle}"
                             Command="{Binding UnregisterFileAssociationCommand}"
-                            Visibility="{Binding IsFileAssociationRegistered, Converter={StaticResource BoolVis}}"/>
+                            Visibility="{Binding IsFileAssociationRegistered, Converter={StaticResource BoolVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource MacToolbarIconGlyphStyle}" Text="&#xE71B;"/>
+                            <TextBlock Text="取消关联" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
                 <TextBlock DockPanel.Dock="Right" Style="{StaticResource MacSecondaryStyle}"
                            VerticalAlignment="Center"

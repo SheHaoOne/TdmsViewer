@@ -110,20 +110,13 @@
                          SelectedItem="{Binding SelectedStep, Mode=TwoWay}"
                          BorderThickness="0"
                          Background="Transparent"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:AnalysisStepItem}">
-                            <Border Padding="8,10" Margin="0,0,0,6" Background="#FFF9F9FB" CornerRadius="8">
-                                <StackPanel>
-                                    <CheckBox Content="{Binding DisplayName}"
-                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                                              Style="{StaticResource MacCheckBoxStyle}"/>
-                                    <TextBlock Text="{Binding Description}"
-                                               Style="{StaticResource MacSecondaryStyle}"
-                                               Margin="24,4,0,0"
-                                               TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
+                            <CheckBox Content="{Binding DisplayName}"
+                                      IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                      Style="{StaticResource MacAnalysisStepCheckBoxStyle}"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
