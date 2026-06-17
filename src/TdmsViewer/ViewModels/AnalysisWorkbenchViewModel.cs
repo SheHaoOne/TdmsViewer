@@ -14,12 +14,13 @@ namespace TdmsViewer.ViewModels;
 
 public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 {
+    private const string LastUsedPlanFileName = "last-analysis-plan.tdms-analysis.json";
     private readonly Func<Task<AnalysisInputContext?>> _loadAnalysisInputAsync;
     private readonly Func<bool> _canAnalyze;
     private readonly Action<AnalysisReportModel> _onReportReady;
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
-    private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
+    private AnalysisPlan _currentPlan = CreateEmptyPlan();
     private double _channelDurationSec;
 
     public AnalysisWorkbenchViewModel(
@@ -47,7 +48,8 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             AvailableSteps.Add(item);
         }
 
-        ApplyPlan(_currentPlan, selectFirstStep: true);
+        var startupPlan = TryLoadLastUsedPlan() ?? CreateEmptyPlan();
+        ApplyPlan(startupPlan, selectFirstStep: true);
     }
 
     [ObservableProperty]
@@ -248,6 +250,8 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         }
 
         var plan = BuildPlanFromUi();
+        _currentPlan = plan;
+        SaveLastUsedPlan(plan);
         IsRunning = true;
         StatusMessage = "正在读取数据并分析…";
         ProgressText = null;
@@ -538,6 +542,55 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             name = name.Replace(invalid, '_');
 
         return string.IsNullOrWhiteSpace(name) ? "analysis-plan" : name.Trim();
+    }
+
+    private static AnalysisPlan CreateEmptyPlan() => new()
+    {
+        Name = AnalysisPlan.CreateDefault().Name,
+        Steps = Array.Empty<AnalysisPlanStep>()
+    };
+
+    private static string GetLastUsedPlanPath()
+    {
+        var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        if (string.IsNullOrWhiteSpace(appData))
+            appData = AppContext.BaseDirectory;
+
+        return Path.Combine(appData, "TdmsViewer", LastUsedPlanFileName);
+    }
+
+    private static AnalysisPlan? TryLoadLastUsedPlan()
+    {
+        var path = GetLastUsedPlanPath();
+        if (!File.Exists(path))
+            return null;
+
+        try
+        {
+            return Task.Run(() => AnalysisPlanSerializer.LoadAsync(path)).GetAwaiter().GetResult();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void SaveLastUsedPlan(AnalysisPlan plan)
+    {
+        var path = GetLastUsedPlanPath();
+        var directory = Path.GetDirectoryName(path);
+        if (string.IsNullOrWhiteSpace(directory))
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+            Task.Run(() => AnalysisPlanSerializer.SaveAsync(plan, path)).GetAwaiter().GetResult();
+        }
+        catch
+        {
+            // 持久化失败不影响当前分析流程。
+        }
     }
 }
 
