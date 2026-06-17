@@ -59,7 +59,7 @@ public partial class HeatmapChartCard : UserControl
                 Model.XAxis[^1],
                 Math.Log10(yMin),
                 Math.Log10(yMax));
-            ConfigureLogYAxisFromCenters(Model.YAxis);
+            ConfigureLogYAxis(Model.YAxis[0], Model.YAxis[^1]);
         }
         else
         {
@@ -81,17 +81,15 @@ public partial class HeatmapChartCard : UserControl
         PlotHost.Refresh();
     }
 
-    private void ConfigureLogYAxisFromCenters(IReadOnlyList<double> centerFrequenciesHz)
+    private void ConfigureLogYAxis(double minHz, double maxHz)
     {
-        var ticks = centerFrequenciesHz
-            .Where(hz => hz > 0)
-            .Distinct()
-            .OrderBy(hz => hz)
+        var tickValues = PlotDataHelper.BuildLogFrequencyTickValues(minHz, maxHz, maxTicks: 6);
+        if (tickValues.Count == 0)
+            return;
+
+        var ticks = tickValues
             .Select(hz => new Tick(Math.Log10(hz), PlotDataHelper.FormatFrequencyLabel(hz)))
             .ToArray();
-
-        if (ticks.Length == 0)
-            return;
 
         PlotHost.Plot.Axes.Left.TickGenerator = new NumericManual(ticks);
         PlotHost.Plot.Grid.MinorLineColor = Color.FromHex("#D2D2D7").WithAlpha(0.25);
