@@ -2,8 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ScottPlot="clr-namespace:ScottPlot.WPF;assembly=ScottPlot.WPF"
+             xmlns:controls="clr-namespace:TdmsViewer.Controls"
+             xmlns:conv="clr-namespace:TdmsViewer.Converters"
              MinHeight="320"
              Margin="0">
+    <UserControl.Resources>
+        <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
+        <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
+    </UserControl.Resources>
     <Border Style="{StaticResource MacCardStyle}" Padding="16" Margin="0">
         <Grid DataContext="{Binding ViewModel, RelativeSource={RelativeSource AncestorType=UserControl}}">
             <Grid.RowDefinitions>
@@ -11,11 +17,34 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="280"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="{Binding Title}"
-                       Style="{StaticResource MacCaptionStyle}"
-                       Margin="0,0,0,8"/>
+            <Grid Grid.Row="0" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource MacCaptionStyle}"/>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="视图"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0"/>
+                    <RadioButton Content="二维"
+                                 GroupName="HeatmapViewMode"
+                                 IsChecked="{Binding Is2DView, Mode=TwoWay}"
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,10,0"/>
+                    <RadioButton Content="三维"
+                                 GroupName="HeatmapViewMode"
+                                 IsChecked="{Binding Is3DView, Mode=TwoWay}"
+                                 VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
             <Grid Grid.Row="1" Margin="0,0,0,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -64,11 +93,23 @@
                        Text="提示：在右侧色条上下边缘拖拽可调整色阶上下限。"
                        Style="{StaticResource MacSecondaryStyle}"
                        Margin="0,0,0,8"
-                       TextWrapping="Wrap"/>
-            <Border Grid.Row="4"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding Is2DView, Converter={StaticResource BoolVis}}"/>
+            <TextBlock Grid.Row="4"
+                       Text="三维视图：X 为横轴，Z 为纵轴，高度为幅值；拖拽旋转，滚轮缩放。"
+                       Style="{StaticResource MacSecondaryStyle}"
+                       Margin="0,0,0,8"
+                       TextWrapping="Wrap"
+                       Visibility="{Binding Is3DView, Converter={StaticResource BoolVis}}"/>
+            <Border Grid.Row="5"
                     CornerRadius="8"
                     ClipToBounds="True">
-                <ScottPlot:WpfPlot x:Name="PlotHost"/>
+                <Grid>
+                    <ScottPlot:WpfPlot x:Name="PlotHost"
+                                       Visibility="{Binding Is2DView, Converter={StaticResource BoolVis}}"/>
+                    <controls:HeatmapSurface3DView x:Name="SurfaceHost"
+                                                   Visibility="{Binding Is3DView, Converter={StaticResource BoolVis}}"/>
+                </Grid>
             </Border>
         </Grid>
     </Border>

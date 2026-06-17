@@ -79,7 +79,10 @@ public partial class HeatmapChartCard : UserControl
         if (e.PropertyName is nameof(HeatmapChartViewModel.RenderModel)
             or nameof(HeatmapChartViewModel.UseAutoColorRange)
             or nameof(HeatmapChartViewModel.ColorMinText)
-            or nameof(HeatmapChartViewModel.ColorMaxText))
+            or nameof(HeatmapChartViewModel.ColorMaxText)
+            or nameof(HeatmapChartViewModel.ViewMode)
+            or nameof(HeatmapChartViewModel.Is2DView)
+            or nameof(HeatmapChartViewModel.Is3DView))
         {
             Redraw();
         }
@@ -230,9 +233,19 @@ public partial class HeatmapChartCard : UserControl
         if (!IsLoaded)
             return;
 
-        var model = ViewModel?.RenderModel;
+        var viewModel = ViewModel;
+        if (viewModel == null)
+            return;
+
+        var model = viewModel.RenderModel;
         if (model == null)
             return;
+
+        if (viewModel.Is3DView)
+        {
+            RedrawSurface3D(model, viewModel);
+            return;
+        }
 
         PlotHost.Plot.Clear();
         RemoveColorBarPanels(PlotHost.Plot);
@@ -287,6 +300,19 @@ public partial class HeatmapChartCard : UserControl
             _dragMin = ViewModel.DataMin;
             _dragMax = ViewModel.DataMax;
         }
+    }
+
+    private void RedrawSurface3D(HeatmapChartModel model, HeatmapChartViewModel viewModel)
+    {
+        _heatmap = null;
+
+        if (!viewModel.TryGetColorRange(out var colorMin, out var colorMax))
+        {
+            colorMin = viewModel.DataMin;
+            colorMax = viewModel.DataMax;
+        }
+
+        SurfaceHost.Render(model, colorMin, colorMax);
     }
 
     private static void RemoveColorBarPanels(Plot plot)

@@ -48,7 +48,36 @@ public sealed partial class HeatmapChartViewModel : ObservableObject
     [ObservableProperty]
     private string? _colorRangeSummary;
 
+    [ObservableProperty]
+    private HeatmapViewMode _viewMode = HeatmapViewMode.Flat2D;
+
+    public bool Is2DView
+    {
+        get => ViewMode == HeatmapViewMode.Flat2D;
+        set
+        {
+            if (value)
+                ViewMode = HeatmapViewMode.Flat2D;
+        }
+    }
+
+    public bool Is3DView
+    {
+        get => ViewMode == HeatmapViewMode.Surface3D;
+        set
+        {
+            if (value)
+                ViewMode = HeatmapViewMode.Surface3D;
+        }
+    }
+
     public HeatmapChartModel RenderModel { get; private set; }
+
+    partial void OnViewModeChanged(HeatmapViewMode value)
+    {
+        OnPropertyChanged(nameof(Is2DView));
+        OnPropertyChanged(nameof(Is3DView));
+    }
 
     partial void OnUseAutoColorRangeChanged(bool value)
     {
