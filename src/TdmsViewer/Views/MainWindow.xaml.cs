@@ -9,6 +9,18 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        MainWaveform.TimeRangeSelected += OnWaveformTimeRangeSelected;
+    }
+
+    private void OnWaveformTimeRangeSelected(object? sender, Controls.WaveformTimeRangeSelectedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+            vm.Workbench.SetGlobalTimeRangeFromWaveform(e.StartSec, e.EndSec);
     }
 
     private void Window_DragOver(object sender, DragEventArgs e)

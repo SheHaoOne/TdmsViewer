@@ -26,6 +26,68 @@
                     <TextBlock Text="{Binding ChannelSummary}"
                                Style="{StaticResource MacSecondaryStyle}"
                                TextWrapping="Wrap"/>
+                    <TextBlock Text="全局分析时段"
+                               Style="{StaticResource MacCaptionStyle}"
+                               Margin="0,12,0,6"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="起始 (s)" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding GlobalStartTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="结束 (s)" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding GlobalEndTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
+                    </Grid>
+                    <TextBlock Text="结束时间填 0 表示分析到信号末尾。"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding GlobalTimeRangeSummary}"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               TextWrapping="Wrap"/>
+                    <TextBlock Text="热力图色阶"
+                               Style="{StaticResource MacCaptionStyle}"
+                               Margin="0,12,0,6"/>
+                    <CheckBox Style="{StaticResource MacCheckBoxStyle}"
+                              Content="自动色阶"
+                              IsChecked="{Binding UseAutoHeatmapColorRange, Mode=TwoWay}"
+                              Margin="0,0,0,8"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="下限" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding HeatmapColorMinText, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
+                    </Grid>
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="上限" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding HeatmapColorMaxText, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
+                    </Grid>
+                    <TextBlock Text="手动色阶会作为热力图初始显示范围，报表中仍可单独调整。"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,4"/>
+                    <TextBlock Text="{Binding GlobalHeatmapColorRangeSummary}"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               TextWrapping="Wrap"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
@@ -125,7 +187,7 @@
 
                                         <TextBox Text="{Binding TextValue, UpdateSourceTrigger=PropertyChanged}"
                                                  Margin="0,0,0,0"
-                                                 Visibility="{Binding IsNumeric, Converter={StaticResource BoolVis}}"/>
+                                                 Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}"/>
                                     </StackPanel>
                                 </Border>
                             </DataTemplate>

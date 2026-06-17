@@ -26,6 +26,27 @@ public sealed class PipelineRunner
         if (enabledSteps.Count == 0)
             throw new InvalidOperationException("请至少启用一个分析步骤。");
 
+        var executionInput = new AnalysisInputContext
+        {
+            FilePath = input.FilePath,
+            FileName = input.FileName,
+            GroupName = input.GroupName,
+            ChannelName = input.ChannelName,
+            Samples = input.Samples,
+            SampleRateHz = input.SampleRateHz,
+            Sources = input.Sources,
+            Data = input.Data,
+            GlobalTimeRange = plan.GlobalTimeRange,
+            GlobalHeatmapColorRange = plan.GlobalHeatmapColorRange
+        };
+
+        var maxDurationSec = input.Sources.Count == 0
+            ? 0
+            : input.Sources.Max(s => s.Samples.Length / s.SampleRateHz);
+        var globalRangeSummary = plan.GlobalTimeRange == null || plan.GlobalTimeRange.IsFullSegment(maxDurationSec)
+            ? null
+            : plan.GlobalTimeRange.FormatSummary(maxDurationSec);
+
         var cards = new List<ChartCardModel>();
         var completed = 0;
 
@@ -41,12 +62,15 @@ public sealed class PipelineRunner
                 CurrentStepName = step.Definition.DisplayName
             });
 
-            var stepCards = await step.ExecuteAsync(input, stepPlan.Parameters, cancellationToken)
+            var stepCards = await step.ExecuteAsync(executionInput, stepPlan.Parameters, cancellationToken)
                 .ConfigureAwait(false);
 
-            foreach (var card in stepCards)
+            for (var i = 0; i < stepCards.Count; i++)
             {
-                cards.Add(card with { Id = string.IsNullOrWhiteSpace(stepPlan.Id) ? card.Id : stepPlan.Id });
+                var card = stepCards[i];
+                var baseId = string.IsNullOrWhiteSpace(stepPlan.Id) ? card.Id : stepPlan.Id;
+                var id = stepCards.Count == 1 ? baseId : $"{baseId}-{i + 1}";
+                cards.Add(card with { Id = id });
             }
 
             completed++;
@@ -63,7 +87,10 @@ public sealed class PipelineRunner
                 SampleRateHz = input.SampleRateHz,
                 SampleCount = input.Sources.Max(s => s.Samples.Length),
                 GeneratedAt = DateTime.Now,
-                PlanName = plan.Name
+                PlanName = plan.Name,
+                AnalyzedStartSec = plan.GlobalTimeRange?.StartSec,
+                AnalyzedEndSec = plan.GlobalTimeRange?.EndSec,
+                TimeRangeSummary = globalRangeSummary
             },
             Cards = cards,
             Sources = input.Sources

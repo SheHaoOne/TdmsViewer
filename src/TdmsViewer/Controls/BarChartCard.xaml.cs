@@ -115,4 +115,24 @@ public partial class BarChartCard : UserControl
             PlotHost.Plot.Add.Bars(bars);
         }
     }
+
+    internal void ApplyFullscreenLayout()
+    {
+        MinHeight = 0;
+        ChartRow.Height = new GridLength(1, GridUnitType.Star);
+        ChartCardChromeHelper.EnterFullscreenMode(CardBorder, HeaderChrome);
+    }
+
+    internal void RefreshAfterResize() => PlotHost.Refresh();
+
+    private void FullscreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Model == null)
+            return;
+
+        ChartFullscreenService.Show(
+            this,
+            () => new BarChartCard { Model = Model },
+            Model.Title);
+    }
 }

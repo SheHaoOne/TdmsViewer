@@ -4,5 +4,6 @@ public enum AnalysisParameterKind
 {
     Integer,
     Double,
-    Choice
+    Choice,
+    Text
 }

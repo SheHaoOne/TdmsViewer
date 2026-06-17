@@ -26,6 +26,9 @@ public sealed class ReportMeta
     public int SampleCount { get; init; }
     public DateTime GeneratedAt { get; init; }
     public string? PlanName { get; init; }
+    public double? AnalyzedStartSec { get; init; }
+    public double? AnalyzedEndSec { get; init; }
+    public string? TimeRangeSummary { get; init; }
 }
 
 public abstract record ChartCardModel(string Id, string Title, ChartKind Kind);
@@ -81,8 +84,23 @@ public sealed record MetricCardModel(
     string Title,
     string Value,
     string Unit,
-    BlockStatus Status = BlockStatus.Ok
+    BlockStatus Status = BlockStatus.Ok,
+    string? SourceKey = null
 ) : ChartCardModel(Id, Title, ChartKind.Metric);
+
+public sealed record HeatmapChartModel(
+    string Id,
+    string Title,
+    string XLabel,
+    string YLabel,
+    double[,] Values,
+    double[] XAxis,
+    double[] YAxis,
+    string? SourceKey = null,
+    double? ColorMin = null,
+    double? ColorMax = null,
+    bool UseLogYAxis = false
+) : ChartCardModel(Id, Title, ChartKind.Heatmap);
 
 public sealed class AnalysisReportModel
 {

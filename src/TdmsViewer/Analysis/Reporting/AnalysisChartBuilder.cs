@@ -1,5 +1,5 @@
 using TdmsViewer.Analysis.Contracts;
-using TdmsViewer.Analysis.Reporting;
+using TdmsViewer.Analysis.Steps;
 
 namespace TdmsViewer.Analysis.Reporting;
 
@@ -7,12 +7,15 @@ internal static class AnalysisChartBuilder
 {
     public static IReadOnlyList<LineSeriesData> BuildWaveformSeries(
         IReadOnlyList<AnalysisSourceSample> sources,
-        int maxPoints = 2000)
+        int maxPoints,
+        AnalysisTimeRange? globalRange,
+        IReadOnlyDictionary<string, object?>? stepParameters)
     {
         var series = new List<LineSeriesData>(sources.Count);
         foreach (var source in sources)
         {
-            var (xs, ys) = PlotDataHelper.DownsampleSeries(source.Samples, source.SampleRateHz, maxPoints);
+            var slice = StepSignalHelper.SliceSource(source, globalRange, stepParameters);
+            var (xs, ys) = PlotDataHelper.DownsampleSeries(slice.Samples, source.SampleRateHz, maxPoints);
             series.Add(new LineSeriesData
             {
                 Label = source.Label,

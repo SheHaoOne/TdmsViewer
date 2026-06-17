@@ -39,7 +39,7 @@ public sealed class OverallLevelStep : IAnalysisStep
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var values = Nvh.OverallLevelSpectral(
                 signal,
                 spectrumLines,

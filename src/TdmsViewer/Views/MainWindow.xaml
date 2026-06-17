@@ -273,8 +273,11 @@
                             <ColumnDefinition Width="Auto" MinWidth="280" MaxWidth="520"/>
                         </Grid.ColumnDefinitions>
 
-                        <controls:WaveformControl Grid.Column="0"
+                        <controls:WaveformControl x:Name="MainWaveform"
+                                                  Grid.Column="0"
                                                   Series="{Binding WaveformSeries}"
+                                                  HighlightStartSec="{Binding Workbench.GlobalHighlightStartSec}"
+                                                  HighlightEndSec="{Binding Workbench.GlobalHighlightEndSec}"
                                                   VerticalAlignment="Stretch"
                                                   HorizontalAlignment="Stretch"/>
 

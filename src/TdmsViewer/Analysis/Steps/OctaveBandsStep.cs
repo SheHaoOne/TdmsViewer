@@ -51,7 +51,7 @@ public sealed class OctaveBandsStep : IAnalysisStep
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var spectra = Nvh.AveragedSpectrum(
                 signal,
                 calcOpt,

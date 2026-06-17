@@ -30,7 +30,7 @@ public sealed class WaveformStep : IAnalysisStep
             "时域波形",
             "时间 (s)",
             "幅值",
-            AnalysisChartBuilder.BuildWaveformSeries(input.Sources, maxPoints));
+            AnalysisChartBuilder.BuildWaveformSeries(input.Sources, maxPoints, input.GlobalTimeRange, parameters));
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>([card]);
     }

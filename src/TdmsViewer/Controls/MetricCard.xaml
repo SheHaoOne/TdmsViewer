@@ -1,0 +1,47 @@
+<UserControl x:Class="TdmsViewer.Controls.MetricCard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:TdmsViewer.Controls"
+             MinHeight="120"
+             Margin="0"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType">
+    <Border x:Name="CardBorder" Style="{StaticResource MacCardStyle}" Padding="16" Margin="0">
+        <Grid x:Name="ContentRoot">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition x:Name="ValueRow" Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid x:Name="HeaderChrome" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource MacCaptionStyle}"
+                           VerticalAlignment="Center"/>
+                <controls:ChartFullscreenIconButton Grid.Column="1"
+                                                    Click="FullscreenButton_Click"/>
+            </Grid>
+            <StackPanel Grid.Row="1"
+                        x:Name="ValuePanel"
+                        VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock x:Name="ValueText"
+                               Text="{Binding Value}"
+                               FontSize="28"
+                               FontWeight="SemiBold"
+                               Foreground="#FF1D1D1F"
+                               VerticalAlignment="Bottom"/>
+                    <TextBlock x:Name="UnitText"
+                               Text="{Binding Unit}"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               Margin="8,0,0,4"
+                               VerticalAlignment="Bottom"/>
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

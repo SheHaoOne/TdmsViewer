@@ -756,7 +756,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
             ChannelName = primary.ChannelName,
             Samples = primary.Samples,
             SampleRateHz = primary.SampleRateHz,
-            Sources = samples
+            Sources = samples,
+            Data = new AnalysisDataAccessor(_tdmsService, _loadedFiles)
         };
     }
 

@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
     <PackageReference Include="TDMSReader" Version="3.1.0" />
@@ -28,7 +29,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="Assets\**\*" />
+    <Resource Include="Assets\**\*" Exclude="Assets\Web\**\*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\Web\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

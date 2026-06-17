@@ -32,4 +32,21 @@ internal static class NvhEnumHelper
 
     public static Octave ParseOctave(string value) =>
         Enum.TryParse<Octave>(value, true, out var parsed) ? parsed : Octave.ThirdOctave;
+
+    public static RpmTrigger ParseRpmTrigger(string value) =>
+        Enum.TryParse<RpmTrigger>(value, true, out var parsed) ? parsed : RpmTrigger.Up;
+
+    public static SoundField ParseSoundField(string value) =>
+        Enum.TryParse<SoundField>(value, true, out var parsed) ? parsed : SoundField.Free;
+
+    public static SharpnessWeighting ParseSharpnessWeighting(string value) =>
+        Enum.TryParse<SharpnessWeighting>(value, true, out var parsed) ? parsed : SharpnessWeighting.Din;
+
+    public static FluctuationMethod ParseFluctuationMethod(string value) =>
+        Enum.TryParse<FluctuationMethod>(value, true, out var parsed) ? parsed : FluctuationMethod.Stationary;
+
+    public static FractionalResamplerPlanningMode ParseResamplerPlanning(string value) =>
+        Enum.TryParse<FractionalResamplerPlanningMode>(value, true, out var parsed)
+            ? parsed
+            : FractionalResamplerPlanningMode.Balanced;
 }

@@ -42,6 +42,22 @@ internal static class AnalysisReportOverlayFilter
                     result.Add(singleBar);
                     break;
                 }
+                case HeatmapChartModel heatmap:
+                {
+                    if (!IsVisible(heatmap.SourceKey, visibleSourceKeys))
+                        continue;
+
+                    result.Add(heatmap);
+                    break;
+                }
+                case MetricCardModel metric:
+                {
+                    if (!IsVisible(metric.SourceKey, visibleSourceKeys))
+                        continue;
+
+                    result.Add(metric);
+                    break;
+                }
                 default:
                     result.Add(card);
                     break;

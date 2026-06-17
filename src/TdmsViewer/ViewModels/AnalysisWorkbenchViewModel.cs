@@ -4,6 +4,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis;
 using TdmsViewer.Analysis.Contracts;
 using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
@@ -19,6 +20,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
     private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
+    private double _channelDurationSec;
 
     public AnalysisWorkbenchViewModel(
         Func<Task<AnalysisInputContext?>> loadAnalysisInputAsync,
@@ -66,6 +68,33 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     [ObservableProperty]
     private AnalysisStepItem? _selectedStep;
 
+    [ObservableProperty]
+    private string _globalStartTimeSec = "0";
+
+    [ObservableProperty]
+    private string _globalEndTimeSec = "0";
+
+    [ObservableProperty]
+    private string? _globalTimeRangeSummary;
+
+    [ObservableProperty]
+    private double? _globalHighlightStartSec;
+
+    [ObservableProperty]
+    private double? _globalHighlightEndSec;
+
+    [ObservableProperty]
+    private bool _useAutoHeatmapColorRange = true;
+
+    [ObservableProperty]
+    private string _heatmapColorMinText = "-80";
+
+    [ObservableProperty]
+    private string _heatmapColorMaxText = "0";
+
+    [ObservableProperty]
+    private string? _globalHeatmapColorRangeSummary;
+
     public bool CanEditParameters => SelectedStep?.HasParameters == true;
 
     public bool ShowNoParametersMessage => SelectedStep != null && !SelectedStep.HasParameters;
@@ -81,11 +110,104 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
     public void RefreshChannelSummary(AnalysisTargetDescription? target)
     {
-        ChannelSummary = target == null
-            ? "请先选择通道"
-            : target.SourceCount <= 1
-                ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点"
-                : $"{target.ChannelName} · {target.SourceCount} 个文件 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
+        if (target == null)
+        {
+            ChannelSummary = "请先选择通道";
+            _channelDurationSec = 0;
+            GlobalTimeRangeSummary = null;
+            return;
+        }
+
+        _channelDurationSec = target.SampleRateHz > 0 ? target.SampleCount / target.SampleRateHz : 0;
+        ChannelSummary = target.SourceCount <= 1
+            ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点 · 全长 {_channelDurationSec:F3} s"
+            : $"{target.ChannelName} · {target.SourceCount} 个文件 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点 · 全长 {_channelDurationSec:F3} s";
+
+        UpdateGlobalTimeRangeSummary();
+    }
+
+    public void SetGlobalTimeRangeFromWaveform(double startSec, double endSec)
+    {
+        if (_channelDurationSec <= 0)
+            return;
+
+        var validation = Analysis.AnalysisTimeRangeResolver.Validate(
+            startSec,
+            endSec,
+            _channelDurationSec,
+            "全局分析时段");
+        if (validation != null)
+        {
+            StatusMessage = validation;
+            return;
+        }
+
+        var range = Analysis.AnalysisTimeRangeResolver.ResolveGlobal(startSec, endSec, _channelDurationSec);
+        GlobalStartTimeSec = range.StartSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+        GlobalEndTimeSec = range.EndSec?.ToString("G", System.Globalization.CultureInfo.InvariantCulture) ?? "0";
+        StatusMessage = $"已同步全局分析时段：{range.FormatSummary(_channelDurationSec)}";
+    }
+
+    partial void OnGlobalStartTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
+
+    partial void OnGlobalEndTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
+
+    partial void OnUseAutoHeatmapColorRangeChanged(bool value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    partial void OnHeatmapColorMinTextChanged(string value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    partial void OnHeatmapColorMaxTextChanged(string value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    private void UpdateGlobalHeatmapColorRangeSummary()
+    {
+        if (UseAutoHeatmapColorRange)
+        {
+            GlobalHeatmapColorRangeSummary = "热力图色阶：自动";
+            return;
+        }
+
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+        {
+            GlobalHeatmapColorRangeSummary = "热力图色阶格式无效";
+            return;
+        }
+
+        GlobalHeatmapColorRangeSummary = HeatmapColorRange.CreateManual(min, max).FormatSummary();
+    }
+
+    private void UpdateGlobalTimeRangeSummary()
+    {
+        if (_channelDurationSec <= 0)
+        {
+            GlobalTimeRangeSummary = null;
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
+            return;
+        }
+
+        if (!TryParseGlobalTimeRange(out var start, out var end))
+        {
+            GlobalTimeRangeSummary = "全局时段格式无效";
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
+            return;
+        }
+
+        var range = Analysis.AnalysisTimeRangeResolver.ResolveGlobal(start, end, _channelDurationSec);
+        GlobalTimeRangeSummary = range.IsFullSegment(_channelDurationSec)
+            ? $"全局分析时段：全长 {_channelDurationSec:F3} s"
+            : $"全局分析时段：{range.FormatSummary(_channelDurationSec)}";
+
+        if (range.IsFullSegment(_channelDurationSec))
+        {
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
+        }
+        else
+        {
+            GlobalHighlightStartSec = range.StartSec;
+            GlobalHighlightEndSec = range.ResolveEndSec(_channelDurationSec);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]
@@ -104,6 +226,18 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 "数据分析",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateGlobalTimeRange(out var globalValidationError))
+        {
+            MessageBox.Show(globalValidationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateHeatmapColorRange(out var heatmapValidationError))
+        {
+            MessageBox.Show(heatmapValidationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -221,7 +355,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         foreach (var step in AvailableSteps.Where(s => s.IsEnabled && s.HasParameters))
         {
-            var stepError = step.ValidateParameters();
+            var stepError = step.ValidateParameters(_channelDurationSec);
             if (stepError != null)
             {
                 error = stepError;
@@ -231,6 +365,84 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         error = string.Empty;
         return true;
+    }
+
+    private bool TryValidateGlobalTimeRange(out string error)
+    {
+        error = string.Empty;
+        if (_channelDurationSec <= 0)
+            return true;
+
+        if (!TryParseGlobalTimeRange(out var start, out var end))
+        {
+            error = "全局分析时段：请输入有效数值。";
+            return false;
+        }
+
+        if (start <= 0 && end <= 0)
+            return true;
+
+        var validation = Analysis.AnalysisTimeRangeResolver.Validate(start, end, _channelDurationSec, "全局分析时段");
+        if (validation != null)
+        {
+            error = validation;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryValidateHeatmapColorRange(out string error)
+    {
+        error = string.Empty;
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+        {
+            if (UseAutoHeatmapColorRange)
+                return true;
+
+            error = "热力图色阶：请输入有效数值。";
+            return false;
+        }
+
+        var validation = HeatmapColorRangeResolver.Validate(UseAutoHeatmapColorRange, min, max);
+        if (validation != null)
+        {
+            error = validation;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryParseGlobalTimeRange(out double startSec, out double endSec)
+    {
+        startSec = 0;
+        endSec = 0;
+        if (!double.TryParse(GlobalStartTimeSec, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out startSec))
+            return false;
+
+        return double.TryParse(GlobalEndTimeSec, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out endSec);
+    }
+
+    private AnalysisTimeRange? BuildGlobalTimeRange()
+    {
+        if (_channelDurationSec <= 0 || !TryParseGlobalTimeRange(out var start, out var end))
+            return null;
+
+        if (start <= 0 && end <= 0)
+            return null;
+
+        return Analysis.AnalysisTimeRangeResolver.ResolveGlobal(start, end, _channelDurationSec);
+    }
+
+    private HeatmapColorRange? BuildHeatmapColorRange()
+    {
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+            return null;
+
+        return HeatmapColorRangeResolver.Resolve(UseAutoHeatmapColorRange, min, max);
     }
 
     private bool CanRunAnalysis() => !IsRunning && _canAnalyze();
@@ -264,6 +476,8 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         return new AnalysisPlan
         {
             Name = PlanName,
+            GlobalTimeRange = BuildGlobalTimeRange(),
+            GlobalHeatmapColorRange = BuildHeatmapColorRange(),
             Steps = steps
         };
     }
@@ -285,6 +499,23 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         _currentPlan = plan;
         PlanName = plan.Name;
+        GlobalStartTimeSec = plan.GlobalTimeRange?.StartSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture) ?? "0";
+        GlobalEndTimeSec = plan.GlobalTimeRange?.EndSec is double endSec && endSec > 0
+            ? endSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture)
+            : "0";
+
+        if (plan.GlobalHeatmapColorRange is { UseAuto: false } colorRange)
+        {
+            UseAutoHeatmapColorRange = false;
+            HeatmapColorMinText = colorRange.Min.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+            HeatmapColorMaxText = colorRange.Max.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        else
+        {
+            UseAutoHeatmapColorRange = true;
+            HeatmapColorMinText = "-80";
+            HeatmapColorMaxText = "0";
+        }
 
         foreach (var item in AvailableSteps)
         {
@@ -296,6 +527,9 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         if (selectFirstStep || SelectedStep == null)
             SelectedStep = AvailableSteps.FirstOrDefault(s => s.HasParameters) ?? AvailableSteps.FirstOrDefault();
+
+        UpdateGlobalTimeRangeSummary();
+        UpdateGlobalHeatmapColorRangeSummary();
     }
 
     private static string SanitizeFileName(string name)

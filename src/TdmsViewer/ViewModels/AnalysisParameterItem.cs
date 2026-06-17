@@ -23,7 +23,11 @@ public sealed partial class AnalysisParameterItem : ObservableObject
 
     public bool IsChoice => Kind == AnalysisParameterKind.Choice;
 
-    public bool IsNumeric => Kind != AnalysisParameterKind.Choice;
+    public bool IsNumeric => Kind is AnalysisParameterKind.Integer or AnalysisParameterKind.Double;
+
+    public bool IsText => Kind == AnalysisParameterKind.Text;
+
+    public bool IsEditable => Kind != AnalysisParameterKind.Choice;
 
     public static AnalysisParameterItem FromDefinition(AnalysisParameterDefinition definition)
     {
@@ -68,6 +72,9 @@ public sealed partial class AnalysisParameterItem : ObservableObject
         if (Kind == AnalysisParameterKind.Choice)
             return SelectedChoice ?? ChoiceOptions.FirstOrDefault()?.Value;
 
+        if (Kind == AnalysisParameterKind.Text)
+            return string.IsNullOrWhiteSpace(TextValue) ? null : TextValue.Trim();
+
         if (Kind == AnalysisParameterKind.Integer)
         {
             return int.TryParse(TextValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
@@ -93,6 +100,19 @@ public sealed partial class AnalysisParameterItem : ObservableObject
             return null;
         }
 
+        if (Kind == AnalysisParameterKind.Text)
+        {
+            if (string.IsNullOrWhiteSpace(TextValue))
+            {
+                if (string.Equals(Key, "rpmGroupName", StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                return $"{stepDisplayName} · {DisplayName}：请输入文本。";
+            }
+
+            return null;
+        }
+
         if (Kind == AnalysisParameterKind.Integer)
         {
             if (!int.TryParse(TextValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) || value <= 0)
@@ -110,6 +130,8 @@ public sealed partial class AnalysisParameterItem : ObservableObject
             "referenceValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
             "increment" or "stepValue" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的数值。",
             "maxPoints" when number <= 0 => $"{stepDisplayName} · {DisplayName}：请输入大于 0 的整数。",
+            "startTimeSec" when number < 0 => $"{stepDisplayName} · {DisplayName}：不能小于 0。",
+            "endTimeSec" when number < 0 => $"{stepDisplayName} · {DisplayName}：不能小于 0。",
             _ => null
         };
     }

@@ -11,9 +11,14 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="波形图"
-                       Style="{StaticResource MacCaptionStyle}"
-                       Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="波形图"
+                           Style="{StaticResource MacCaptionStyle}"/>
+                <TextBlock Text="· 拖拽选择分析时段"
+                           Style="{StaticResource MacSecondaryStyle}"
+                           Margin="8,0,0,0"
+                           VerticalAlignment="Center"/>
+            </StackPanel>
             <Border Grid.Row="1"
                     CornerRadius="8"
                     ClipToBounds="True">
