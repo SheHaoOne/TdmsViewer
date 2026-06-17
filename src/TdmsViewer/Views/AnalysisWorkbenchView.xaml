@@ -8,9 +8,9 @@
     </UserControl.Resources>
     <Grid Margin="0,8,0,0">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="4*"/>
             <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="6*"/>
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Style="{StaticResource MacCardStyle}" Padding="16">
