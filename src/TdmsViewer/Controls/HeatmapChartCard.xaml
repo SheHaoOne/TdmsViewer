@@ -10,6 +10,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="280"/>
             </Grid.RowDefinitions>
             <TextBlock Text="{Binding Title}"
@@ -57,9 +58,14 @@
             <TextBlock Grid.Row="2"
                        Text="{Binding ColorRangeSummary}"
                        Style="{StaticResource MacSecondaryStyle}"
+                       Margin="0,0,0,4"
+                       TextWrapping="Wrap"/>
+            <TextBlock Grid.Row="3"
+                       Text="提示：在右侧色条上下边缘拖拽可调整色阶上下限。"
+                       Style="{StaticResource MacSecondaryStyle}"
                        Margin="0,0,0,8"
                        TextWrapping="Wrap"/>
-            <Border Grid.Row="3"
+            <Border Grid.Row="4"
                     CornerRadius="8"
                     ClipToBounds="True">
                 <ScottPlot:WpfPlot x:Name="PlotHost"/>

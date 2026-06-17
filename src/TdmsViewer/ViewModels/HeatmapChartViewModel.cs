@@ -116,6 +116,36 @@ public sealed partial class HeatmapChartViewModel : ObservableObject
         return max > min;
     }
 
+    public bool TryGetColorRange(out double min, out double max)
+    {
+        if (UseAutoColorRange)
+        {
+            min = DataMin;
+            max = DataMax;
+            return true;
+        }
+
+        return TryParseColorRange(out min, out max);
+    }
+
+    public void ApplyDraggedColorRange(double min, double max)
+    {
+        if (UseAutoColorRange)
+            UseAutoColorRange = false;
+
+        ColorMinText = FormatValue(min);
+        ColorMaxText = FormatValue(max);
+        ColorRangeSummary = $"色阶：手动（{FormatValue(min)} ~ {FormatValue(max)}）· 拖拽色条调整";
+    }
+
+    public void CommitManualColorRange(double min, double max)
+    {
+        UseAutoColorRange = false;
+        ColorMinText = FormatValue(min);
+        ColorMaxText = FormatValue(max);
+        UpdateRenderModel();
+    }
+
     private static string FormatValue(double value) =>
         value.ToString("G", CultureInfo.InvariantCulture);
 }
