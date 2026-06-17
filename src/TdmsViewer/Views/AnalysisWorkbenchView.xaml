@@ -22,66 +22,72 @@
                              Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding ChannelSummary}"
                                Style="{StaticResource MacHintTextStyle}"/>
-                    <TextBlock Text="全局分析时段"
-                               Style="{StaticResource MacSectionTitleStyle}"/>
-                    <Grid Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="起始 (s)" Style="{StaticResource MacFormLabelStyle}"/>
-                        <TextBox Grid.Column="1"
-                                 Style="{StaticResource MacTextBoxStyle}"
-                                 Text="{Binding GlobalStartTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Grid>
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="结束 (s)" Style="{StaticResource MacFormLabelStyle}"/>
-                        <TextBox Grid.Column="1"
-                                 Style="{StaticResource MacTextBoxStyle}"
-                                 Text="{Binding GlobalEndTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
-                    </Grid>
-                    <TextBlock Text="结束时间填 0 表示分析到信号末尾。"
-                               Style="{StaticResource MacHintTextStyle}"
-                               Margin="0,0,0,4"/>
-                    <TextBlock Text="{Binding GlobalTimeRangeSummary}"
-                               Style="{StaticResource MacHintTextStyle}"/>
-                    <TextBlock Text="热力图色阶"
-                               Style="{StaticResource MacSectionTitleStyle}"/>
-                    <CheckBox Style="{StaticResource MacCheckBoxStyle}"
-                              Content="自动色阶"
-                              IsChecked="{Binding UseAutoHeatmapColorRange, Mode=TwoWay}"
-                              Margin="0,0,0,8"/>
-                    <Grid Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="下限" Style="{StaticResource MacFormLabelStyle}"/>
-                        <TextBox Grid.Column="1"
-                                 Style="{StaticResource MacTextBoxStyle}"
-                                 Text="{Binding HeatmapColorMinText, UpdateSourceTrigger=PropertyChanged}"
-                                 IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
-                    </Grid>
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="上限" Style="{StaticResource MacFormLabelStyle}"/>
-                        <TextBox Grid.Column="1"
-                                 Style="{StaticResource MacTextBoxStyle}"
-                                 Text="{Binding HeatmapColorMaxText, UpdateSourceTrigger=PropertyChanged}"
-                                 IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
-                    </Grid>
-                    <TextBlock Text="手动色阶会作为热力图初始显示范围，报表中仍可单独调整。"
-                               Style="{StaticResource MacHintTextStyle}"
-                               Margin="0,0,0,4"/>
-                    <TextBlock Text="{Binding GlobalHeatmapColorRangeSummary}"
-                               Style="{StaticResource MacHintTextStyle}"/>
+
+                    <Expander Header="全局分析时段" IsExpanded="False" Margin="0,12,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="起始 (s)" Style="{StaticResource MacFormLabelStyle}"/>
+                                <TextBox Grid.Column="1"
+                                         Style="{StaticResource MacTextBoxStyle}"
+                                         Text="{Binding GlobalStartTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="结束 (s)" Style="{StaticResource MacFormLabelStyle}"/>
+                                <TextBox Grid.Column="1"
+                                         Style="{StaticResource MacTextBoxStyle}"
+                                         Text="{Binding GlobalEndTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+                            <TextBlock Text="结束时间填 0 表示分析到信号末尾。"
+                                       Style="{StaticResource MacHintTextStyle}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding GlobalTimeRangeSummary}"
+                                       Style="{StaticResource MacHintTextStyle}"/>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="热力图色阶" IsExpanded="False" Margin="0,8,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <CheckBox Style="{StaticResource MacCheckBoxStyle}"
+                                      Content="自动色阶"
+                                      IsChecked="{Binding UseAutoHeatmapColorRange, Mode=TwoWay}"
+                                      Margin="0,0,0,8"/>
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="下限" Style="{StaticResource MacFormLabelStyle}"/>
+                                <TextBox Grid.Column="1"
+                                         Style="{StaticResource MacTextBoxStyle}"
+                                         Text="{Binding HeatmapColorMinText, UpdateSourceTrigger=PropertyChanged}"
+                                         IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
+                            </Grid>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="上限" Style="{StaticResource MacFormLabelStyle}"/>
+                                <TextBox Grid.Column="1"
+                                         Style="{StaticResource MacTextBoxStyle}"
+                                         Text="{Binding HeatmapColorMaxText, UpdateSourceTrigger=PropertyChanged}"
+                                         IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
+                            </Grid>
+                            <TextBlock Text="手动色阶会作为热力图初始显示范围，报表中仍可单独调整。"
+                                       Style="{StaticResource MacHintTextStyle}"
+                                       Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding GlobalHeatmapColorRangeSummary}"
+                                       Style="{StaticResource MacHintTextStyle}"/>
+                        </StackPanel>
+                    </Expander>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
