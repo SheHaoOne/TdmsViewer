@@ -17,10 +17,10 @@
                     <Model3DGroup>
                         <DirectionalLight Color="White" Direction="-0.4,-1,-0.6"/>
                         <DirectionalLight Color="#FFCCCCCC" Direction="0.6,0.2,0.8"/>
-                        <ModelVisual3D x:Name="SurfaceHost"/>
                     </Model3DGroup>
                 </ModelVisual3D.Content>
             </ModelVisual3D>
+            <ModelVisual3D x:Name="SurfaceHost"/>
         </Viewport3D>
         <TextBlock Text="拖拽旋转 · 滚轮缩放"
                    Style="{StaticResource MacSecondaryStyle}"
