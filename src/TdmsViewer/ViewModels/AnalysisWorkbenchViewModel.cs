@@ -19,7 +19,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private readonly Action<AnalysisReportModel> _onReportReady;
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
-    private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
+    private AnalysisPlan _currentPlan = AnalysisPlan.CreateEmpty();
     private double _channelDurationSec;
 
     public AnalysisWorkbenchViewModel(
@@ -31,6 +31,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         _canAnalyze = canAnalyze;
         _onReportReady = onReportReady;
         _runner = new PipelineRunner(_registry);
+        _currentPlan = AnalysisPlanStore.TryLoadLastPlan() ?? AnalysisPlan.CreateEmpty();
 
         foreach (var definition in _registry.GetDefinitions())
         {
@@ -39,9 +40,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 StepType = definition.StepType,
                 DisplayName = definition.DisplayName,
                 Description = definition.Description,
-                Category = definition.Category,
-                IsEnabled = _currentPlan.Steps.Any(s =>
-                    string.Equals(s.StepType, definition.StepType, StringComparison.OrdinalIgnoreCase) && s.Enabled)
+                Category = definition.Category
             };
             item.InitializeParameters();
             AvailableSteps.Add(item);
@@ -51,7 +50,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    private string _planName = AnalysisPlan.CreateDefault().Name;
+    private string _planName = AnalysisPlan.CreateEmpty().Name;
 
     [ObservableProperty]
     private string _statusMessage = "勾选分析步骤后点击「运行分析」";
@@ -269,6 +268,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             });
 
             StatusMessage = $"分析完成，共 {report.Cards.Count} 张图表";
+            await AnalysisPlanStore.SaveLastPlanAsync(plan);
             _onReportReady(report);
         }
         catch (Exception ex)
