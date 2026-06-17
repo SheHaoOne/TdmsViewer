@@ -80,51 +80,7 @@ internal static class PlotDataHelper
     }
 
     public static string FormatFrequencyLabel(double hz) =>
-        hz >= 1000 ? $"{hz / 1000:0.#}k" : hz < 10 ? hz.ToString("0.##") : hz.ToString("0");
-
-    public static IReadOnlyList<double> BuildLogFrequencyTickValues(double minHz, double maxHz, int maxTicks = 7)
-    {
-        if (minHz <= 0 || maxHz <= minHz || maxTicks < 2)
-            return Array.Empty<double>();
-
-        var candidates = CollectDecadeTicks(minHz, maxHz, [1, 2, 5]);
-        if (candidates.Count <= maxTicks)
-            return candidates;
-
-        candidates = CollectDecadeTicks(minHz, maxHz, [1]);
-        if (candidates.Count <= maxTicks)
-            return candidates;
-
-        var selected = new List<double>(maxTicks);
-        var step = (double)(candidates.Count - 1) / (maxTicks - 1);
-        for (var i = 0; i < maxTicks; i++)
-        {
-            var index = (int)Math.Round(i * step);
-            selected.Add(candidates[Math.Clamp(index, 0, candidates.Count - 1)]);
-        }
-
-        return selected.Distinct().OrderBy(hz => hz).ToArray();
-    }
-
-    private static List<double> CollectDecadeTicks(double minHz, double maxHz, int[] multipliers)
-    {
-        var minExp = (int)Math.Floor(Math.Log10(minHz));
-        var maxExp = (int)Math.Ceiling(Math.Log10(maxHz));
-        var ticks = new List<double>();
-
-        for (var exp = minExp; exp <= maxExp; exp++)
-        {
-            var decade = Math.Pow(10, exp);
-            foreach (var multiplier in multipliers)
-            {
-                var hz = multiplier * decade;
-                if (hz >= minHz && hz <= maxHz)
-                    ticks.Add(hz);
-            }
-        }
-
-        return ticks.Distinct().OrderBy(hz => hz).ToList();
-    }
+        hz >= 1000 ? $"{hz / 1000:0.#}k" : hz.ToString("0");
 
     public static double[] ToLog10Axis(double[] values) =>
         values.Select(v => v > 0 ? Math.Log10(v) : double.NaN).ToArray();
