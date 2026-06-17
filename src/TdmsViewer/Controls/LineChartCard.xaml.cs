@@ -100,7 +100,10 @@ public partial class LineChartCard : UserControl
     {
         MinHeight = 0;
         ChartRow.Height = new GridLength(1, GridUnitType.Star);
+        ChartCardChromeHelper.EnterFullscreenMode(CardBorder, HeaderChrome);
     }
+
+    internal void RefreshAfterResize() => PlotHost.Refresh();
 
     private void FullscreenButton_Click(object sender, RoutedEventArgs e)
     {

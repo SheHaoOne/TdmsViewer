@@ -8,14 +8,12 @@ public partial class ChartFullscreenWindow : Window
     public ChartFullscreenWindow(UIElement content, string title)
     {
         InitializeComponent();
-        TitleText.Text = title;
         Title = title;
         Host.Content = content;
         Owner = Application.Current.MainWindow;
         ChartFullscreenService.ApplyFullscreenLayout(content);
+        Loaded += (_, _) => ChartFullscreenService.RefreshChartContent(content);
     }
-
-    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {

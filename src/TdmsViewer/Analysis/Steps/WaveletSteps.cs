@@ -53,7 +53,7 @@ public sealed class MorletWaveletStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"morlet-{source.FilePath}",
-                $"Morlet 小波 · {source.Label}",
+                "Morlet 小波",
                 "时间 (s)",
                 "频率 (Hz)",
                 data,
@@ -123,7 +123,7 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"lms-{source.FilePath}",
-                $"LMS Morlet · {source.Label}",
+                "LMS Morlet",
                 "时间 (s)",
                 "频率 (Hz)",
                 data,

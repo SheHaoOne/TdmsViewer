@@ -160,7 +160,7 @@ public sealed class RpmFrequencyMapStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"rfm-{source.FilePath}",
-                $"Campbell 图 · {source.Label}",
+                "Campbell 图",
                 "转速 (RPM)",
                 "频率 (Hz)",
                 data,
@@ -227,7 +227,7 @@ public sealed class RpmOrderMapStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"rom-{source.FilePath}",
-                $"阶次谱图 · {source.Label}",
+                "阶次谱图",
                 "转速 (RPM)",
                 "阶次",
                 data,

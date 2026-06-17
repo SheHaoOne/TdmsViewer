@@ -50,7 +50,7 @@ public sealed class ModulationSpectrumStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"mod-{source.FilePath}",
-                $"调制谱 · {source.Label}",
+                "调制谱",
                 "时间 (s)",
                 "频率 (Hz)",
                 spectrogram,
@@ -62,7 +62,7 @@ public sealed class ModulationSpectrumStep : IAnalysisStep
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, modulationDepth);
             cards.Add(NvhStepCharts.Line(
                 $"mod-depth-{source.FilePath}",
-                $"调制深度 · {source.Label}",
+                "调制深度",
                 "时间 (s)",
                 "调制深度",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));
@@ -117,7 +117,7 @@ public sealed class ModulationSpectrumStftStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"modstft-{source.FilePath}",
-                $"调制谱 STFT · {source.Label}",
+                "调制谱 STFT",
                 "时间 (s)",
                 "频率 (Hz)",
                 spectrogram,
@@ -129,7 +129,7 @@ public sealed class ModulationSpectrumStftStep : IAnalysisStep
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, modulationDepth);
             cards.Add(NvhStepCharts.Line(
                 $"modstft-depth-{source.FilePath}",
-                $"调制深度 · {source.Label}",
+                "调制深度",
                 "时间 (s)",
                 "调制深度",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));

@@ -16,6 +16,7 @@ public partial class MetricCard : UserControl
         ValueText.FontSize = 72;
         UnitText.FontSize = 28;
         UnitText.Margin = new Thickness(16, 0, 0, 12);
+        ChartCardChromeHelper.EnterFullscreenMode(CardBorder, HeaderChrome);
     }
 
     private void FullscreenButton_Click(object sender, RoutedEventArgs e)

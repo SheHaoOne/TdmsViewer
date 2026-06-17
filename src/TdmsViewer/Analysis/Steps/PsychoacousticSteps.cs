@@ -36,10 +36,10 @@ public sealed class StationaryLoudnessStep : IAnalysisStep
             var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var (loudness, specLoudness) = Nvh.StationaryLoudnessAnalyze(signal, soundField, 0.0, out var barkAxis, out _);
 
-            cards.Add(NvhStepCharts.Metric($"sl-{source.FilePath}", $"稳态响度 · {source.Label}", loudness, "sone", source.FilePath));
+            cards.Add(NvhStepCharts.Metric($"sl-{source.FilePath}", "稳态响度", loudness, "sone", source.FilePath));
             cards.Add(NvhStepCharts.Bar(
                 $"sl-spec-{source.FilePath}",
-                $"特征响度 · {source.Label}",
+                "特征响度",
                 "Bark 频带",
                 "响度 (sone/Bark)",
                 Enumerable.Range(0, barkAxis.Length).Select(i => (double)i).ToArray(),
@@ -85,14 +85,14 @@ public sealed class TimeVaryingLoudnessStep : IAnalysisStep
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, loudness);
             cards.Add(NvhStepCharts.Line(
                 $"tvl-{source.FilePath}",
-                $"时变响度 · {source.Label}",
+                "时变响度",
                 "时间 (s)",
                 "响度 (sone)",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"tvl-spec-{source.FilePath}",
-                $"特征响度谱 · {source.Label}",
+                "特征响度谱",
                 "时间 (s)",
                 "Bark 频带",
                 NvhStepCharts.Transpose(specLoudness),
@@ -137,10 +137,10 @@ public sealed class StationarySharpnessStep : IAnalysisStep
             var sharpness = Nvh.StationarySharpnessAnalyze(
                 signal, weighting, soundField, 0.0, out var specSharpness, out var barkAxis, out _);
 
-            cards.Add(NvhStepCharts.Metric($"ss-{source.FilePath}", $"稳态尖锐度 · {source.Label}", sharpness, "acum", source.FilePath));
+            cards.Add(NvhStepCharts.Metric($"ss-{source.FilePath}", "稳态尖锐度", sharpness, "acum", source.FilePath));
             cards.Add(NvhStepCharts.Bar(
                 $"ss-spec-{source.FilePath}",
-                $"特征尖锐度 · {source.Label}",
+                "特征尖锐度",
                 "Bark 频带",
                 "尖锐度",
                 Enumerable.Range(0, barkAxis.Length).Select(i => (double)i).ToArray(),
@@ -187,14 +187,14 @@ public sealed class TimeVaryingSharpnessStep : IAnalysisStep
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, sharpness);
             cards.Add(NvhStepCharts.Line(
                 $"tvs-{source.FilePath}",
-                $"时变尖锐度 · {source.Label}",
+                "时变尖锐度",
                 "时间 (s)",
                 "尖锐度 (acum)",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"tvs-spec-{source.FilePath}",
-                $"特征尖锐度谱 · {source.Label}",
+                "特征尖锐度谱",
                 "时间 (s)",
                 "Bark 频带",
                 NvhStepCharts.Transpose(specSharpness),
@@ -247,19 +247,19 @@ public sealed class RoughnessStep : IAnalysisStep
                 out _,
                 out var timeAxis);
 
-            cards.Add(NvhStepCharts.Metric($"rough-{source.FilePath}", $"粗糙度 · {source.Label}", roughness, "asper", source.FilePath));
+            cards.Add(NvhStepCharts.Metric($"rough-{source.FilePath}", "粗糙度", roughness, "asper", source.FilePath));
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, roughnessTimeDep);
             cards.Add(NvhStepCharts.Line(
                 $"rough-tv-{source.FilePath}",
-                $"时变粗糙度 · {source.Label}",
+                "时变粗糙度",
                 "时间 (s)",
                 "粗糙度 (asper)",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));
 
             cards.Add(NvhStepCharts.Bar(
                 $"rough-band-{source.FilePath}",
-                $"频带平均粗糙度 · {source.Label}",
+                "频带平均粗糙度",
                 "频带",
                 "粗糙度 (asper)",
                 Enumerable.Range(0, bandAxis.Length).Select(i => (double)i).ToArray(),
@@ -309,19 +309,19 @@ public sealed class FluctuationStrengthStep : IAnalysisStep
                 out _,
                 out var timeAxis);
 
-            cards.Add(NvhStepCharts.Metric($"fluc-{source.FilePath}", $"波动度 · {source.Label}", fluctuation, "vacil", source.FilePath));
+            cards.Add(NvhStepCharts.Metric($"fluc-{source.FilePath}", "波动度", fluctuation, "vacil", source.FilePath));
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, fluctuationTimeDep);
             cards.Add(NvhStepCharts.Line(
                 $"fluc-tv-{source.FilePath}",
-                $"时变波动度 · {source.Label}",
+                "时变波动度",
                 "时间 (s)",
                 "波动度",
                 [NvhStepCharts.BuildSeries(source, txs, tys)]));
 
             cards.Add(NvhStepCharts.Bar(
                 $"fluc-band-{source.FilePath}",
-                $"频带平均波动度 · {source.Label}",
+                "频带平均波动度",
                 "频带",
                 "波动度",
                 Enumerable.Range(0, bandAxis.Length).Select(i => (double)i).ToArray(),

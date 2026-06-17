@@ -52,7 +52,7 @@ public sealed class TimeFrequencyMapStep : IAnalysisStep
 
             cards.Add(NvhStepCharts.Heatmap(
                 $"tfm-{source.FilePath}",
-                $"时频图 · {source.Label}",
+                "时频图",
                 "时间 (s)",
                 "频率 (Hz)",
                 downsampled,

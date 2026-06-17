@@ -356,6 +356,13 @@ public partial class HeatmapChartCard : UserControl
     {
         MinHeight = 0;
         ChartRow.Height = new GridLength(1, GridUnitType.Star);
+        ChartCardChromeHelper.EnterFullscreenMode(CardBorder, TitleRow);
+    }
+
+    internal void RefreshAfterResize()
+    {
+        if (ViewModel?.Is2DView == true)
+            PlotHost.Refresh();
     }
 
     private void FullscreenButton_Click(object sender, RoutedEventArgs e)

@@ -34,4 +34,20 @@ internal static class ChartFullscreenService
                 break;
         }
     }
+
+    public static void RefreshChartContent(UIElement content)
+    {
+        switch (content)
+        {
+            case LineChartCard lineChart:
+                lineChart.RefreshAfterResize();
+                break;
+            case BarChartCard barChart:
+                barChart.RefreshAfterResize();
+                break;
+            case HeatmapChartCard heatmapChart:
+                heatmapChart.RefreshAfterResize();
+                break;
+        }
+    }
 }
