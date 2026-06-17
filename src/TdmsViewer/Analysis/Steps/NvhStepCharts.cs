@@ -3,6 +3,7 @@ using NvhLibCSharp;
 using NvhLibCSharp.Enums;
 using NvhLibCSharp.Interop;
 using NvhLibCSharp.Options;
+using TdmsViewer.Analysis;
 using TdmsViewer.Analysis.Contracts;
 using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
@@ -118,19 +119,30 @@ internal static class RpmChannelHelper
         return rpmValues;
     }
 
-    public static Rpm LoadRpm(
+    public static double[] LoadRpmValuesForRange(
         AnalysisInputContext input,
         AnalysisSourceSample source,
         IReadOnlyDictionary<string, object?>? parameters)
     {
         var rpmValues = LoadRpmValues(input, source, parameters);
+        var range = StepSignalHelper.ResolveRange(source, input.GlobalTimeRange, parameters);
+        var rpmSampleRateHz = StepParameters.GetDouble(parameters, "rpmSampleRateHz", 0);
+        var rpmRate = rpmSampleRateHz > 0 ? rpmSampleRateHz : source.SampleRateHz;
+        return SignalSegmentHelper.Slice(rpmValues, rpmRate, range).Samples;
+    }
 
+    public static Rpm LoadRpm(
+        AnalysisInputContext input,
+        AnalysisSourceSample source,
+        IReadOnlyDictionary<string, object?>? parameters)
+    {
+        var sliced = LoadRpmValuesForRange(input, source, parameters);
         var rpmSampleRateHz = StepParameters.GetDouble(parameters, "rpmSampleRateHz", 0);
         var increment = rpmSampleRateHz > 0
             ? 1.0 / rpmSampleRateHz
             : 1.0 / source.SampleRateHz;
 
-        return new Rpm(rpmValues, increment);
+        return new Rpm(sliced, increment);
     }
 }
 

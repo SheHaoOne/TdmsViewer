@@ -40,7 +40,7 @@ public sealed class MorletWaveletStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var nyquist = source.SampleRateHz / 2.0;
             var maxFreq = Math.Min(maxFrequency, nyquist);
             var frequencyAxis = MathUtils.Logspace(Math.Log10(minFrequency), Math.Log10(maxFreq), bandCount).ToArray();
@@ -93,7 +93,7 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var data = Nvh.LmsMorletWaveletTransform(
                 signal,
                 scaleOpt,

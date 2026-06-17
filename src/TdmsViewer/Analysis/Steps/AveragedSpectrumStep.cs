@@ -47,7 +47,7 @@ public sealed class AveragedSpectrumStep : IAnalysisStep
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var values = Nvh.AveragedSpectrum(signal, calcOpt, stepOpt, scaleOpt, format, average, window, weight);
             var spectrumLines = PlotDataHelper.ResolveSpectrumLines(
                 signal.DeltaTime,

@@ -33,7 +33,7 @@ public sealed class HilbertEnvelopeStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var envelope = Nvh.HilbertEnvelope(signal);
             var timeAxis = NvhStepCharts.BuildTimeAxis(envelope.Length, signal.DeltaTime);
             var (xs, ys) = PlotDataHelper.DownsampleXY(timeAxis, envelope, maxPoints);
@@ -73,7 +73,7 @@ public sealed class HilbertEnvelopeSpectraStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var values = Nvh.HilbertEnvelopeSpectra(signal, window, format, out var freqAxis);
             var (xs, ys) = PlotDataHelper.DownsampleXY(freqAxis, values);
             series.Add(NvhStepCharts.BuildSeries(source, xs, ys));
@@ -111,7 +111,7 @@ public sealed class HilbertEnvelopeAvgSpectraStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var values = Nvh.HilbertEnvelopeAvgSpectra(
                 signal,
                 spectral.Calc,
@@ -161,7 +161,7 @@ public sealed class HilbertEnvelopeExFixedStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var envelope = Nvh.HilbertEnvelopeEx(signal, options);
             var timeAxis = NvhStepCharts.BuildTimeAxis(envelope.Length, signal.DeltaTime);
             var (xs, ys) = PlotDataHelper.DownsampleXY(timeAxis, envelope, maxPoints);
@@ -205,8 +205,8 @@ public sealed class HilbertEnvelopeExTrackedStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
-            var rpmValues = RpmChannelHelper.LoadRpmValues(input, source, parameters);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
+            var rpmValues = RpmChannelHelper.LoadRpmValuesForRange(input, source, parameters);
             var options = new EnvelopeExOptions(centerOrder, bandWidth, windowLength, minFrequency, maxFrequency, rpmValues);
             var envelope = Nvh.HilbertEnvelopeEx(signal, options);
             var timeAxis = NvhStepCharts.BuildTimeAxis(envelope.Length, signal.DeltaTime);

@@ -19,6 +19,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     private readonly AnalysisStepRegistry _registry = new();
     private readonly PipelineRunner _runner;
     private AnalysisPlan _currentPlan = AnalysisPlan.CreateDefault();
+    private double _channelDurationSec;
 
     public AnalysisWorkbenchViewModel(
         Func<Task<AnalysisInputContext?>> loadAnalysisInputAsync,
@@ -66,6 +67,15 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     [ObservableProperty]
     private AnalysisStepItem? _selectedStep;
 
+    [ObservableProperty]
+    private string _globalStartTimeSec = "0";
+
+    [ObservableProperty]
+    private string _globalEndTimeSec = "0";
+
+    [ObservableProperty]
+    private string? _globalTimeRangeSummary;
+
     public bool CanEditParameters => SelectedStep?.HasParameters == true;
 
     public bool ShowNoParametersMessage => SelectedStep != null && !SelectedStep.HasParameters;
@@ -81,11 +91,44 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
     public void RefreshChannelSummary(AnalysisTargetDescription? target)
     {
-        ChannelSummary = target == null
-            ? "请先选择通道"
-            : target.SourceCount <= 1
-                ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点"
-                : $"{target.ChannelName} · {target.SourceCount} 个文件 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点";
+        if (target == null)
+        {
+            ChannelSummary = "请先选择通道";
+            _channelDurationSec = 0;
+            GlobalTimeRangeSummary = null;
+            return;
+        }
+
+        _channelDurationSec = target.SampleRateHz > 0 ? target.SampleCount / target.SampleRateHz : 0;
+        ChannelSummary = target.SourceCount <= 1
+            ? $"{target.FileName} / {target.GroupName} / {target.ChannelName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点 · 全长 {_channelDurationSec:F3} s"
+            : $"{target.ChannelName} · {target.SourceCount} 个文件 · {target.GroupName} · {target.SampleRateHz:N0} Hz · {target.SampleCount:N0} 点 · 全长 {_channelDurationSec:F3} s";
+
+        UpdateGlobalTimeRangeSummary();
+    }
+
+    partial void OnGlobalStartTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
+
+    partial void OnGlobalEndTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
+
+    private void UpdateGlobalTimeRangeSummary()
+    {
+        if (_channelDurationSec <= 0)
+        {
+            GlobalTimeRangeSummary = null;
+            return;
+        }
+
+        if (!TryParseGlobalTimeRange(out var start, out var end))
+        {
+            GlobalTimeRangeSummary = "全局时段格式无效";
+            return;
+        }
+
+        var range = Analysis.AnalysisTimeRangeResolver.ResolveGlobal(start, end, _channelDurationSec);
+        GlobalTimeRangeSummary = range.IsFullSegment(_channelDurationSec)
+            ? $"全局分析时段：全长 {_channelDurationSec:F3} s"
+            : $"全局分析时段：{range.FormatSummary(_channelDurationSec)}";
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]
@@ -104,6 +147,12 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
                 "数据分析",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateGlobalTimeRange(out var globalValidationError))
+        {
+            MessageBox.Show(globalValidationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -221,7 +270,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         foreach (var step in AvailableSteps.Where(s => s.IsEnabled && s.HasParameters))
         {
-            var stepError = step.ValidateParameters();
+            var stepError = step.ValidateParameters(_channelDurationSec);
             if (stepError != null)
             {
                 error = stepError;
@@ -231,6 +280,54 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         error = string.Empty;
         return true;
+    }
+
+    private bool TryValidateGlobalTimeRange(out string error)
+    {
+        error = string.Empty;
+        if (_channelDurationSec <= 0)
+            return true;
+
+        if (!TryParseGlobalTimeRange(out var start, out var end))
+        {
+            error = "全局分析时段：请输入有效数值。";
+            return false;
+        }
+
+        if (start <= 0 && end <= 0)
+            return true;
+
+        var validation = Analysis.AnalysisTimeRangeResolver.Validate(start, end, _channelDurationSec, "全局分析时段");
+        if (validation != null)
+        {
+            error = validation;
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryParseGlobalTimeRange(out double startSec, out double endSec)
+    {
+        startSec = 0;
+        endSec = 0;
+        if (!double.TryParse(GlobalStartTimeSec, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out startSec))
+            return false;
+
+        return double.TryParse(GlobalEndTimeSec, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out endSec);
+    }
+
+    private AnalysisTimeRange? BuildGlobalTimeRange()
+    {
+        if (_channelDurationSec <= 0 || !TryParseGlobalTimeRange(out var start, out var end))
+            return null;
+
+        if (start <= 0 && end <= 0)
+            return null;
+
+        return Analysis.AnalysisTimeRangeResolver.ResolveGlobal(start, end, _channelDurationSec);
     }
 
     private bool CanRunAnalysis() => !IsRunning && _canAnalyze();
@@ -264,6 +361,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         return new AnalysisPlan
         {
             Name = PlanName,
+            GlobalTimeRange = BuildGlobalTimeRange(),
             Steps = steps
         };
     }
@@ -285,6 +383,10 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     {
         _currentPlan = plan;
         PlanName = plan.Name;
+        GlobalStartTimeSec = plan.GlobalTimeRange?.StartSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture) ?? "0";
+        GlobalEndTimeSec = plan.GlobalTimeRange?.EndSec is double endSec && endSec > 0
+            ? endSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture)
+            : "0";
 
         foreach (var item in AvailableSteps)
         {
@@ -296,6 +398,8 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
 
         if (selectFirstStep || SelectedStep == null)
             SelectedStep = AvailableSteps.FirstOrDefault(s => s.HasParameters) ?? AvailableSteps.FirstOrDefault();
+
+        UpdateGlobalTimeRangeSummary();
     }
 
     private static string SanitizeFileName(string name)

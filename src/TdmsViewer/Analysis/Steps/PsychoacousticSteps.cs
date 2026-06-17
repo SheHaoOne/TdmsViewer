@@ -28,14 +28,13 @@ public sealed class StationaryLoudnessStep : IAnalysisStep
         NvhLicenseService.EnsureLoaded();
 
         var soundField = NvhEnumHelper.ParseSoundField(StepParameters.GetString(parameters, "soundField", "Free"));
-        var skipInSec = StepParameters.GetDouble(parameters, "skipInSec", 0.0);
         var cards = new List<ChartCardModel>();
 
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
-            var (loudness, specLoudness) = Nvh.StationaryLoudnessAnalyze(signal, soundField, skipInSec, out var barkAxis, out _);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
+            var (loudness, specLoudness) = Nvh.StationaryLoudnessAnalyze(signal, soundField, 0.0, out var barkAxis, out _);
 
             cards.Add(NvhStepCharts.Metric($"sl-{source.FilePath}", $"稳态响度 · {source.Label}", loudness, "sone", source.FilePath));
             cards.Add(NvhStepCharts.Bar(
@@ -74,15 +73,14 @@ public sealed class TimeVaryingLoudnessStep : IAnalysisStep
         NvhLicenseService.EnsureLoaded();
 
         var soundField = NvhEnumHelper.ParseSoundField(StepParameters.GetString(parameters, "soundField", "Free"));
-        var skipInSec = StepParameters.GetDouble(parameters, "skipInSec", 0.0);
         var cards = new List<ChartCardModel>();
 
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var (loudness, specLoudness) = Nvh.TimeVaryingLoudnessAnalyze(
-                signal, soundField, skipInSec, out var barkAxis, out _, out var timeAxis);
+                signal, soundField, 0.0, out var barkAxis, out _, out var timeAxis);
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, loudness);
             cards.Add(NvhStepCharts.Line(
@@ -129,15 +127,14 @@ public sealed class StationarySharpnessStep : IAnalysisStep
 
         var weighting = NvhEnumHelper.ParseSharpnessWeighting(StepParameters.GetString(parameters, "weighting", "Din"));
         var soundField = NvhEnumHelper.ParseSoundField(StepParameters.GetString(parameters, "soundField", "Free"));
-        var skipInSec = StepParameters.GetDouble(parameters, "skipInSec", 0.0);
         var cards = new List<ChartCardModel>();
 
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var sharpness = Nvh.StationarySharpnessAnalyze(
-                signal, weighting, soundField, skipInSec, out var specSharpness, out var barkAxis, out _);
+                signal, weighting, soundField, 0.0, out var specSharpness, out var barkAxis, out _);
 
             cards.Add(NvhStepCharts.Metric($"ss-{source.FilePath}", $"稳态尖锐度 · {source.Label}", sharpness, "acum", source.FilePath));
             cards.Add(NvhStepCharts.Bar(
@@ -177,15 +174,14 @@ public sealed class TimeVaryingSharpnessStep : IAnalysisStep
 
         var weighting = NvhEnumHelper.ParseSharpnessWeighting(StepParameters.GetString(parameters, "weighting", "Din"));
         var soundField = NvhEnumHelper.ParseSoundField(StepParameters.GetString(parameters, "soundField", "Free"));
-        var skipInSec = StepParameters.GetDouble(parameters, "skipInSec", 0.0);
         var cards = new List<ChartCardModel>();
 
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var sharpness = Nvh.TimeVaryingSharpnessAnalyze(
-                signal, weighting, soundField, skipInSec, out var specSharpness, out var barkAxis, out _, out var timeAxis);
+                signal, weighting, soundField, 0.0, out var specSharpness, out var barkAxis, out _, out var timeAxis);
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, sharpness);
             cards.Add(NvhStepCharts.Line(
@@ -231,17 +227,16 @@ public sealed class RoughnessStep : IAnalysisStep
         NvhLicenseService.EnsureLoaded();
 
         var soundField = NvhEnumHelper.ParseSoundField(StepParameters.GetString(parameters, "soundField", "Free"));
-        var skipInSec = StepParameters.GetDouble(parameters, "skipInSec", 0.3);
         var cards = new List<ChartCardModel>();
 
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var roughness = Nvh.RoughnessAnalyze(
                 signal,
                 soundField,
-                skipInSec,
+                0.0,
                 out var roughnessTimeDep,
                 out _,
                 out var roughnessSpecAvg,
@@ -301,7 +296,7 @@ public sealed class FluctuationStrengthStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var fluctuation = Nvh.FluctuationStrengthAnalyze(
                 signal,
                 method,

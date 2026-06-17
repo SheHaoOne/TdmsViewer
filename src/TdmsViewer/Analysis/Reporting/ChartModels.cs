@@ -26,6 +26,9 @@ public sealed class ReportMeta
     public int SampleCount { get; init; }
     public DateTime GeneratedAt { get; init; }
     public string? PlanName { get; init; }
+    public double? AnalyzedStartSec { get; init; }
+    public double? AnalyzedEndSec { get; init; }
+    public string? TimeRangeSummary { get; init; }
 }
 
 public abstract record ChartCardModel(string Id, string Title, ChartKind Kind);

@@ -105,34 +105,29 @@ internal static class AnalysisStepParameterCatalogExtended
 
     private static IReadOnlyList<AnalysisParameterDefinition> StationaryLoudness() =>
     [
-        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices()),
-        Double("skipInSec", "跳过时长 (s)", 0.0, "分析前跳过的秒数")
+        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices())
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> TimeVaryingLoudness() =>
     [
-        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices()),
-        Double("skipInSec", "跳过时长 (s)", 0.0, "分析前跳过的秒数")
+        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices())
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> StationarySharpness() =>
     [
         Choice("weighting", "计权", "Din", AnalysisStepParameterCatalog.SharpnessWeightingChoices()),
-        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices()),
-        Double("skipInSec", "跳过时长 (s)", 0.0, "分析前跳过的秒数")
+        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices())
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> TimeVaryingSharpness() =>
     [
         Choice("weighting", "计权", "Din", AnalysisStepParameterCatalog.SharpnessWeightingChoices()),
-        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices()),
-        Double("skipInSec", "跳过时长 (s)", 0.0, "分析前跳过的秒数")
+        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices())
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> Roughness() =>
     [
-        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices()),
-        Double("skipInSec", "跳过时长 (s)", 0.3, "分析前跳过的秒数")
+        Choice("soundField", "声场", "Free", AnalysisStepParameterCatalog.SoundFieldChoices())
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> FluctuationStrength() =>

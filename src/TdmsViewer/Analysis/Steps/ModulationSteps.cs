@@ -37,7 +37,7 @@ public sealed class ModulationSpectrumStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var spectrogram = Nvh.ModulationSpectrumAnalysis(
                 signal,
                 frequencyResolution,
@@ -102,7 +102,7 @@ public sealed class ModulationSpectrumStftStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var spectrogram = Nvh.ModulationSpectrumAnalysis(
                 signal,
                 windowSize,

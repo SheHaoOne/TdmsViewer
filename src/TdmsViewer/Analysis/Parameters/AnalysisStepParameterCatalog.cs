@@ -21,10 +21,13 @@ internal static class AnalysisStepParameterCatalog
         return definitions;
     }
 
-    public static IReadOnlyList<AnalysisParameterDefinition> Get(string stepType) =>
-        Definitions.TryGetValue(stepType, out var definitions)
-            ? definitions
-            : Array.Empty<AnalysisParameterDefinition>();
+    public static IReadOnlyList<AnalysisParameterDefinition> Get(string stepType)
+    {
+        if (!Definitions.TryGetValue(stepType, out var definitions))
+            return Array.Empty<AnalysisParameterDefinition>();
+
+        return [..definitions, ..SharedTimeRangeParams()];
+    }
 
     public static IReadOnlyDictionary<string, object?> GetDefaults(string stepType) =>
         Get(stepType).ToDictionary(d => d.Key, d => (object?)d.DefaultValue, StringComparer.Ordinal);
@@ -109,6 +112,12 @@ internal static class AnalysisStepParameterCatalog
         Double("maxRpm", "最大转速", 4000, "转速轴上限 (RPM)"),
         Double("rpmStep", "转速步长", 25, "转速轴步进 (RPM)"),
         Choice("rpmTrigger", "转速触发", "Up", RpmTriggerChoices())
+    ];
+
+    internal static IReadOnlyList<AnalysisParameterDefinition> SharedTimeRangeParams() =>
+    [
+        Double("startTimeSec", "起始时间 (s)", 0, "0 表示信号开头；留 0 可继承方案全局时段"),
+        Double("endTimeSec", "结束时间 (s)", 0, "0 表示信号末尾；留 0 可继承方案全局时段")
     ];
 
     private static IReadOnlyList<AnalysisParameterDefinition> OctaveBands() =>

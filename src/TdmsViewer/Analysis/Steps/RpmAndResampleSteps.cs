@@ -36,7 +36,7 @@ public sealed class ResampleStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var resampled = Nvh.ResampleSignal(signal, destSampleRateHz, bandRatio, planningMode);
             var deltaTime = 1.0 / destSampleRateHz;
             var timeAxis = NvhStepCharts.BuildTimeAxis(resampled.Length, deltaTime);
@@ -84,7 +84,7 @@ public sealed class OrderSectionStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var rpm = RpmChannelHelper.LoadRpm(input, source, parameters);
             var values = Nvh.OrderSection(
                 signal,
@@ -140,7 +140,7 @@ public sealed class RpmFrequencyMapStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var rpm = RpmChannelHelper.LoadRpm(input, source, parameters);
             var data = Nvh.RpmFrequencyMap(
                 signal,
@@ -206,7 +206,7 @@ public sealed class RpmOrderMapStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var rpm = RpmChannelHelper.LoadRpm(input, source, parameters);
             var data = Nvh.RpmOrderMap(
                 signal,

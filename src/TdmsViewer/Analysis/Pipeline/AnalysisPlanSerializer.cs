@@ -1,13 +1,22 @@
+using System.Globalization;
 using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TdmsViewer.Analysis.Contracts;
 
 namespace TdmsViewer.Analysis.Pipeline;
 
 public sealed class AnalysisPlanDocument
 {
     public string Name { get; set; } = "快速声学检查";
+    public AnalysisTimeRangeDocument? GlobalTimeRange { get; set; }
     public List<AnalysisPlanStepDocument> Steps { get; set; } = new();
+}
+
+public sealed class AnalysisTimeRangeDocument
+{
+    public double StartSec { get; set; }
+    public double? EndSec { get; set; }
 }
 
 public sealed class AnalysisPlanStepDocument
@@ -46,6 +55,13 @@ public static class AnalysisPlanSerializer
     public static AnalysisPlanDocument ToDocument(AnalysisPlan plan) => new()
     {
         Name = plan.Name,
+        GlobalTimeRange = plan.GlobalTimeRange == null
+            ? null
+            : new AnalysisTimeRangeDocument
+            {
+                StartSec = plan.GlobalTimeRange.StartSec,
+                EndSec = plan.GlobalTimeRange.EndSec
+            },
         Steps = plan.Steps.Select(step => new AnalysisPlanStepDocument
         {
             Id = step.Id,
@@ -62,12 +78,35 @@ public static class AnalysisPlanSerializer
     public static AnalysisPlan FromDocument(AnalysisPlanDocument document) => new()
     {
         Name = document.Name,
+        GlobalTimeRange = document.GlobalTimeRange == null
+            ? null
+            : new AnalysisTimeRange
+            {
+                StartSec = document.GlobalTimeRange.StartSec,
+                EndSec = document.GlobalTimeRange.EndSec
+            },
         Steps = document.Steps.Select(step => new AnalysisPlanStep
         {
             Id = step.Id,
             StepType = step.StepType,
             Enabled = step.Enabled,
-            Parameters = AnalysisPlanParameterConverter.FromJsonElements(step.Parameters)
+            Parameters = MigrateParameters(AnalysisPlanParameterConverter.FromJsonElements(step.Parameters))
         }).ToList()
     };
+
+    private static Dictionary<string, object?> MigrateParameters(Dictionary<string, object?> parameters)
+    {
+        if (parameters.TryGetValue("skipInSec", out var skipValue) && skipValue != null)
+        {
+            if (!parameters.ContainsKey("startTimeSec")
+                && double.TryParse(skipValue.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var skip))
+            {
+                parameters["startTimeSec"] = skip;
+            }
+
+            parameters.Remove("skipInSec");
+        }
+
+        return parameters;
+    }
 }

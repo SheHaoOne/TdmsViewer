@@ -67,7 +67,7 @@ public sealed partial class AnalysisStepItem : ObservableObject
     public Dictionary<string, object?> ToParameterDictionary() =>
         Parameters.ToDictionary(p => p.Key, p => p.ToObject(), StringComparer.Ordinal);
 
-    public string? ValidateParameters()
+    public string? ValidateParameters(double? channelDurationSec = null)
     {
         foreach (var parameter in Parameters)
         {
@@ -90,6 +90,24 @@ public sealed partial class AnalysisStepItem : ObservableObject
             }
         }
 
-        return null;
+        if (channelDurationSec is not > 0)
+            return null;
+
+        var stepStart = ParseDouble(Parameters.FirstOrDefault(p => p.Key == "startTimeSec")?.TextValue, 0);
+        var stepEnd = ParseDouble(Parameters.FirstOrDefault(p => p.Key == "endTimeSec")?.TextValue, 0);
+        if (stepStart <= 0 && stepEnd <= 0)
+            return null;
+
+        return Analysis.AnalysisTimeRangeResolver.Validate(
+            stepStart,
+            stepEnd,
+            channelDurationSec.Value,
+            $"{DisplayName} · 分析时段");
     }
+
+    private static double ParseDouble(string? text, double fallback) =>
+        double.TryParse(text, System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var value)
+            ? value
+            : fallback;
 }

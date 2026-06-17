@@ -134,6 +134,7 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
 
         return $"{sourceLabel} · {meta.GroupName} / {meta.ChannelName} · " +
                $"{meta.SampleRateHz:N0} Hz · {meta.SampleCount:N0} 点 · " +
+               (string.IsNullOrWhiteSpace(meta.TimeRangeSummary) ? string.Empty : $"{meta.TimeRangeSummary} · ") +
                $"{meta.GeneratedAt:yyyy-MM-dd HH:mm:ss}";
     }
 }

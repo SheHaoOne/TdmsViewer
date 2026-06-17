@@ -34,7 +34,7 @@ public sealed class TimeFrequencyMapStep : IAnalysisStep
         foreach (var source in input.Sources)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var signal = NvhSignalAdapter.ToSignal(source.Samples, source.SampleRateHz);
+            var signal = StepSignalHelper.ToSignal(source, input.GlobalTimeRange, parameters);
             var data = Nvh.TimeFrequencyMap(
                 signal,
                 mapParams.SpectrumLines,

@@ -1,5 +1,7 @@
 namespace TdmsViewer.Analysis.Pipeline;
 
+using TdmsViewer.Analysis.Contracts;
+
 public sealed class AnalysisPlanStep
 {
     public required string StepType { get; init; }
@@ -12,6 +14,7 @@ public sealed class AnalysisPlanStep
 public sealed class AnalysisPlan
 {
     public string Name { get; init; } = "快速声学检查";
+    public AnalysisTimeRange? GlobalTimeRange { get; init; }
     public IReadOnlyList<AnalysisPlanStep> Steps { get; init; } = Array.Empty<AnalysisPlanStep>();
 
     public static AnalysisPlan CreateDefault() => new()
