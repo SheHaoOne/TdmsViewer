@@ -20,4 +20,6 @@ public partial class ChartFullscreenWindow : Window
         if (e.Key == Key.Escape)
             Close();
     }
+
+    private void ExitButton_Click(object sender, RoutedEventArgs e) => Close();
 }
