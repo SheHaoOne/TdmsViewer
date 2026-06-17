@@ -5,10 +5,6 @@
              xmlns:vm="clr-namespace:TdmsViewer.ViewModels">
     <UserControl.Resources>
         <conv:BoolToVisibilityConverter x:Key="BoolVis"/>
-        <conv:BoolToVisibilityConverter x:Key="BoolVisInvert" Invert="True"/>
-        <Style x:Key="ParameterLabelStyle" TargetType="TextBlock" BasedOn="{StaticResource MacSecondaryStyle}">
-            <Setter Property="Margin" Value="0,0,0,4"/>
-        </Style>
     </UserControl.Resources>
     <Grid Margin="0,8,0,0">
         <Grid.ColumnDefinitions>
@@ -22,20 +18,20 @@
                 <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
                     <TextBlock Text="分析工作台" Style="{StaticResource MacCaptionStyle}" Margin="0,0,0,8"/>
                     <TextBox Text="{Binding PlanName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource MacTextBoxStyle}"
                              Margin="0,0,0,8"/>
                     <TextBlock Text="{Binding ChannelSummary}"
-                               Style="{StaticResource MacSecondaryStyle}"
-                               TextWrapping="Wrap"/>
+                               Style="{StaticResource MacHintTextStyle}"/>
                     <TextBlock Text="全局分析时段"
-                               Style="{StaticResource MacCaptionStyle}"
-                               Margin="0,12,0,6"/>
+                               Style="{StaticResource MacSectionTitleStyle}"/>
                     <Grid Margin="0,0,0,4">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="起始 (s)" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="起始 (s)" Style="{StaticResource MacFormLabelStyle}"/>
                         <TextBox Grid.Column="1"
+                                 Style="{StaticResource MacTextBoxStyle}"
                                  Text="{Binding GlobalStartTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
                     <Grid Margin="0,0,0,8">
@@ -43,20 +39,18 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="结束 (s)" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="结束 (s)" Style="{StaticResource MacFormLabelStyle}"/>
                         <TextBox Grid.Column="1"
+                                 Style="{StaticResource MacTextBoxStyle}"
                                  Text="{Binding GlobalEndTimeSec, UpdateSourceTrigger=PropertyChanged}"/>
                     </Grid>
                     <TextBlock Text="结束时间填 0 表示分析到信号末尾。"
-                               Style="{StaticResource MacSecondaryStyle}"
-                               TextWrapping="Wrap"
+                               Style="{StaticResource MacHintTextStyle}"
                                Margin="0,0,0,4"/>
                     <TextBlock Text="{Binding GlobalTimeRangeSummary}"
-                               Style="{StaticResource MacSecondaryStyle}"
-                               TextWrapping="Wrap"/>
+                               Style="{StaticResource MacHintTextStyle}"/>
                     <TextBlock Text="热力图色阶"
-                               Style="{StaticResource MacCaptionStyle}"
-                               Margin="0,12,0,6"/>
+                               Style="{StaticResource MacSectionTitleStyle}"/>
                     <CheckBox Style="{StaticResource MacCheckBoxStyle}"
                               Content="自动色阶"
                               IsChecked="{Binding UseAutoHeatmapColorRange, Mode=TwoWay}"
@@ -66,8 +60,9 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="下限" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="下限" Style="{StaticResource MacFormLabelStyle}"/>
                         <TextBox Grid.Column="1"
+                                 Style="{StaticResource MacTextBoxStyle}"
                                  Text="{Binding HeatmapColorMinText, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
                     </Grid>
@@ -76,18 +71,17 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Text="上限" Style="{StaticResource MacSecondaryStyle}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="上限" Style="{StaticResource MacFormLabelStyle}"/>
                         <TextBox Grid.Column="1"
+                                 Style="{StaticResource MacTextBoxStyle}"
                                  Text="{Binding HeatmapColorMaxText, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding UseAutoHeatmapColorRange}"/>
                     </Grid>
                     <TextBlock Text="手动色阶会作为热力图初始显示范围，报表中仍可单独调整。"
-                               Style="{StaticResource MacSecondaryStyle}"
-                               TextWrapping="Wrap"
+                               Style="{StaticResource MacHintTextStyle}"
                                Margin="0,0,0,4"/>
                     <TextBlock Text="{Binding GlobalHeatmapColorRangeSummary}"
-                               Style="{StaticResource MacSecondaryStyle}"
-                               TextWrapping="Wrap"/>
+                               Style="{StaticResource MacHintTextStyle}"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
@@ -100,18 +94,18 @@
                         <Button Content="加载方案" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding LoadPlanCommand}" Margin="0,0,8,8"/>
                         <Button Content="恢复默认" Style="{StaticResource MacToolbarButtonStyle}" Command="{Binding ResetPlanCommand}" Margin="0,0,0,8"/>
                     </WrapPanel>
-                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacSecondaryStyle}" TextWrapping="Wrap"/>
-                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MacSecondaryStyle}" Margin="0,4,0,0"/>
+                    <TextBlock Text="{Binding StatusMessage}" Style="{StaticResource MacHintTextStyle}"/>
+                    <TextBlock Text="{Binding ProgressText}" Style="{StaticResource MacHintTextStyle}" Margin="0,4,0,0"/>
                     <ProgressBar Height="4" IsIndeterminate="True" Margin="0,8,0,0"
+                                 Foreground="{StaticResource MacAccentBrush}"
                                  Visibility="{Binding IsRunning, Converter={StaticResource BoolVis}}"/>
                 </StackPanel>
 
                 <ListBox ItemsSource="{Binding AvailableSteps}"
                          SelectedItem="{Binding SelectedStep, Mode=TwoWay}"
+                         Style="{StaticResource MacListBoxStyle}"
                          ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}"
-                         BorderThickness="0"
-                         Background="Transparent"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto">
+                         Margin="0,2,0,0">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:AnalysisStepItem}">
                             <Grid ToolTip="{Binding Description}">
@@ -160,14 +154,14 @@
                                Style="{StaticResource MacBodyStyle}"
                                Margin="0,6,0,0"/>
                     <TextBlock Text="{Binding SelectedStep.Description}"
-                               Style="{StaticResource MacSecondaryStyle}"
+                               Style="{StaticResource MacHintTextStyle}"
                                Margin="0,4,0,0"
-                               TextWrapping="Wrap"/>
+                               MaxWidth="640"/>
                 </StackPanel>
 
                 <TextBlock DockPanel.Dock="Top"
                            Text="该步骤无可配置参数。"
-                           Style="{StaticResource MacSecondaryStyle}"
+                           Style="{StaticResource MacHintTextStyle}"
                            Margin="0,24,0,0"
                            HorizontalAlignment="Center"
                            Visibility="{Binding ShowNoParametersMessage, Converter={StaticResource BoolVis}}"/>
@@ -183,11 +177,13 @@
                                     <StackPanel>
                                         <TextBlock Text="{Binding DisplayName}" Style="{StaticResource MacBodyStyle}"/>
                                         <TextBlock Text="{Binding Description}"
-                                                   Style="{StaticResource MacSecondaryStyle}"
+                                                   Style="{StaticResource MacHintTextStyle}"
                                                    Margin="0,2,0,8"
-                                                   TextWrapping="Wrap"/>
+                                                   MaxWidth="640"/>
 
                                         <ComboBox ItemsSource="{Binding ChoiceOptions}"
+                                                  Style="{StaticResource MacComboBoxStyle}"
+                                                  ItemContainerStyle="{StaticResource MacComboBoxItemStyle}"
                                                   DisplayMemberPath="Label"
                                                   SelectedValuePath="Value"
                                                   SelectedValue="{Binding SelectedChoice, Mode=TwoWay}"
@@ -195,6 +191,7 @@
                                                   Visibility="{Binding IsChoice, Converter={StaticResource BoolVis}}"/>
 
                                         <TextBox Text="{Binding TextValue, UpdateSourceTrigger=PropertyChanged}"
+                                                 Style="{StaticResource MacTextBoxStyle}"
                                                  Margin="0,0,0,0"
                                                  Visibility="{Binding IsEditable, Converter={StaticResource BoolVis}}"/>
                                     </StackPanel>
