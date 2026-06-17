@@ -10,6 +10,7 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
 {
     private AnalysisReportModel? _fullReport;
     private bool _suppressOverlaySelectAllSync;
+    private readonly Dictionary<string, HeatmapChartViewModel> _heatmapViewModels = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty]
     private ReportMeta? _meta;
@@ -23,7 +24,7 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
     [ObservableProperty]
     private bool _isAllOverlayChecked = true;
 
-    public ObservableCollection<ChartCardModel> Cards { get; } = new();
+    public ObservableCollection<object> Cards { get; } = new();
 
     public ObservableCollection<ReportOverlayFileItem> OverlayFiles { get; } = new();
 
@@ -41,6 +42,7 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
     public void SetReport(AnalysisReportModel report)
     {
         ClearOverlaySubscriptions();
+        _heatmapViewModels.Clear();
         _fullReport = report;
         Meta = report.Meta;
 
@@ -67,6 +69,7 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
     private void Clear()
     {
         ClearOverlaySubscriptions();
+        _heatmapViewModels.Clear();
         _fullReport = null;
         Meta = null;
         SummaryText = "暂无报表";
@@ -108,9 +111,27 @@ public sealed partial class AnalysisReportViewModel : ObservableObject
         var filtered = AnalysisReportOverlayFilter.Filter(_fullReport.Cards, visiblePaths);
         Cards.Clear();
         foreach (var card in filtered)
-            Cards.Add(card);
+            Cards.Add(ToDisplayCard(card));
 
         SummaryText = BuildSummaryText(_fullReport.Meta, visiblePaths.Count);
+    }
+
+    private object ToDisplayCard(ChartCardModel card) =>
+        card switch
+        {
+            HeatmapChartModel heatmap => GetOrCreateHeatmapViewModel(heatmap),
+            _ => card
+        };
+
+    private HeatmapChartViewModel GetOrCreateHeatmapViewModel(HeatmapChartModel heatmap)
+    {
+        if (!_heatmapViewModels.TryGetValue(heatmap.Id, out var viewModel))
+        {
+            viewModel = new HeatmapChartViewModel(heatmap);
+            _heatmapViewModels[heatmap.Id] = viewModel;
+        }
+
+        return viewModel;
     }
 
     private void SyncSelectAllOverlayCheckbox()

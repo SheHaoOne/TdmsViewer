@@ -19,7 +19,7 @@
         </DataTemplate>
         <DataTemplate x:Key="HeatmapChartCardTemplate">
             <Border Margin="10">
-                <controls:HeatmapChartCard Model="{Binding}"/>
+                <controls:HeatmapChartCard ViewModel="{Binding}"/>
             </Border>
         </DataTemplate>
         <DataTemplate x:Key="MetricCardTemplate">

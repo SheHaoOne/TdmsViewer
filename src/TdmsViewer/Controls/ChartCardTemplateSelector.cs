@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using TdmsViewer.Analysis.Reporting;
+using TdmsViewer.ViewModels;
 
 namespace TdmsViewer.Controls;
 
@@ -17,6 +18,7 @@ public sealed class ChartCardTemplateSelector : DataTemplateSelector
             LineChartModel => LineChartTemplate,
             BarChartModel => BarChartTemplate,
             HeatmapChartModel => HeatmapChartTemplate,
+            HeatmapChartViewModel => HeatmapChartTemplate,
             MetricCardModel => MetricCardTemplate,
             _ => base.SelectTemplate(item, container)
         };

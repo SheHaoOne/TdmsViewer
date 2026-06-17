@@ -1,19 +1,21 @@
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using ScottPlot;
 using ScottPlot.TickGenerators;
 using TdmsViewer.Analysis.Reporting;
+using TdmsViewer.ViewModels;
 
 namespace TdmsViewer.Controls;
 
 public partial class HeatmapChartCard : UserControl
 {
-    public static readonly DependencyProperty ModelProperty =
+    public static readonly DependencyProperty ViewModelProperty =
         DependencyProperty.Register(
-            nameof(Model),
-            typeof(HeatmapChartModel),
+            nameof(ViewModel),
+            typeof(HeatmapChartViewModel),
             typeof(HeatmapChartCard),
-            new PropertyMetadata(null, OnModelChanged));
+            new PropertyMetadata(null, OnViewModelChanged));
 
     public HeatmapChartCard()
     {
@@ -21,62 +23,84 @@ public partial class HeatmapChartCard : UserControl
         Loaded += (_, _) => Redraw();
     }
 
-    public HeatmapChartModel? Model
+    public HeatmapChartViewModel? ViewModel
     {
-        get => (HeatmapChartModel?)GetValue(ModelProperty);
-        set => SetValue(ModelProperty, value);
+        get => (HeatmapChartViewModel?)GetValue(ViewModelProperty);
+        set => SetValue(ViewModelProperty, value);
     }
 
-    private static void OnModelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    private static void OnViewModelChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is HeatmapChartCard card)
-            card.Redraw();
+        if (d is not HeatmapChartCard card)
+            return;
+
+        if (e.OldValue is INotifyPropertyChanged oldVm)
+            oldVm.PropertyChanged -= card.OnViewModelPropertyChanged;
+
+        if (e.NewValue is INotifyPropertyChanged newVm)
+            newVm.PropertyChanged += card.OnViewModelPropertyChanged;
+
+        card.Redraw();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(HeatmapChartViewModel.RenderModel)
+            or nameof(HeatmapChartViewModel.UseAutoColorRange))
+        {
+            Redraw();
+        }
     }
 
     private void Redraw()
     {
-        if (!IsLoaded || Model == null)
+        if (!IsLoaded)
+            return;
+
+        var model = ViewModel?.RenderModel;
+        if (model == null)
             return;
 
         PlotHost.Plot.Clear();
         ScottPlotStyle.ApplyMacTheme(PlotHost.Plot);
 
-        if (Model.XAxis.Length < 2 || Model.YAxis.Length < 2)
+        if (model.XAxis.Length < 2 || model.YAxis.Length < 2)
         {
             PlotHost.Refresh();
             return;
         }
 
-        var heatmap = PlotHost.Plot.Add.Heatmap(Model.Values);
+        var heatmap = PlotHost.Plot.Add.Heatmap(model.Values);
         heatmap.Smooth = true;
         heatmap.FlipVertically = true;
-        if (Model.UseLogYAxis)
+        if (model.UseLogYAxis)
         {
-            var yMin = Model.YAxis[0];
-            var yMax = Model.YAxis[^1];
+            var yMin = model.YAxis[0];
+            var yMax = model.YAxis[^1];
             heatmap.Rectangle = new CoordinateRect(
-                Model.XAxis[0],
-                Model.XAxis[^1],
+                model.XAxis[0],
+                model.XAxis[^1],
                 Math.Log10(yMin),
                 Math.Log10(yMax));
-            ConfigureLogYAxisFromCenters(Model.YAxis);
+            ConfigureLogYAxisFromCenters(model.YAxis);
         }
         else
         {
             heatmap.Rectangle = new CoordinateRect(
-                Model.XAxis[0],
-                Model.XAxis[^1],
-                Model.YAxis[0],
-                Model.YAxis[^1]);
+                model.XAxis[0],
+                model.XAxis[^1],
+                model.YAxis[0],
+                model.YAxis[^1]);
         }
+
         heatmap.Colormap = new ScottPlot.Colormaps.Turbo();
 
-        if (Model.ColorMin is double min && Model.ColorMax is double max)
+        if (model.ColorMin is double min && model.ColorMax is double max)
             heatmap.ManualRange = new ScottPlot.Range(min, max);
 
         PlotHost.Plot.Add.ColorBar(heatmap);
-        PlotHost.Plot.Axes.Bottom.Label.Text = Model.XLabel;
-        PlotHost.Plot.Axes.Left.Label.Text = Model.YLabel;
+        PlotHost.Plot.Axes.Bottom.Label.Text = model.XLabel;
+        PlotHost.Plot.Axes.Left.Label.Text = model.YLabel;
         PlotHost.Plot.Axes.AutoScale();
         PlotHost.Refresh();
     }

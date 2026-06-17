@@ -82,6 +82,37 @@ internal static class PlotDataHelper
     public static string FormatFrequencyLabel(double hz) =>
         hz >= 1000 ? $"{hz / 1000:0.#}k" : hz.ToString("0");
 
+    public static (double Min, double Max) GetMatrixRange(double[,] values)
+    {
+        var rows = values.GetLength(0);
+        var cols = values.GetLength(1);
+        var min = double.PositiveInfinity;
+        var max = double.NegativeInfinity;
+        var found = false;
+
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                var value = values[i, j];
+                if (double.IsNaN(value) || double.IsInfinity(value))
+                    continue;
+
+                found = true;
+                min = Math.Min(min, value);
+                max = Math.Max(max, value);
+            }
+        }
+
+        if (!found)
+            return (0, 1);
+
+        if (min >= max)
+            max = min + 1;
+
+        return (min, max);
+    }
+
     public static double[] ToLog10Axis(double[] values) =>
         values.Select(v => v > 0 ? Math.Log10(v) : double.NaN).ToArray();
 
