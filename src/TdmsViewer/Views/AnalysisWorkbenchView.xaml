@@ -108,22 +108,31 @@
 
                 <ListBox ItemsSource="{Binding AvailableSteps}"
                          SelectedItem="{Binding SelectedStep, Mode=TwoWay}"
+                         ItemContainerStyle="{StaticResource MacFileListBoxItemStyle}"
                          BorderThickness="0"
                          Background="Transparent"
                          ScrollViewer.VerticalScrollBarVisibility="Auto">
                     <ListBox.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:AnalysisStepItem}">
-                            <Border Padding="8,10" Margin="0,0,0,6" Background="#FFF9F9FB" CornerRadius="8">
-                                <StackPanel>
-                                    <CheckBox Content="{Binding DisplayName}"
-                                              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
-                                              Style="{StaticResource MacCheckBoxStyle}"/>
-                                    <TextBlock Text="{Binding Description}"
-                                               Style="{StaticResource MacSecondaryStyle}"
-                                               Margin="24,4,0,0"
-                                               TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </Border>
+                            <Grid ToolTip="{Binding Description}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <CheckBox Grid.Column="0"
+                                          IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                          Style="{StaticResource MacCheckBoxStyle}"
+                                          VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding DisplayName}"
+                                               Style="{StaticResource MacListPrimaryTextStyle}"/>
+                                </CheckBox>
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Description}"
+                                           Style="{StaticResource MacListMetaTextStyle}"
+                                           Margin="10,0,0,0"
+                                           VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </Grid>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
