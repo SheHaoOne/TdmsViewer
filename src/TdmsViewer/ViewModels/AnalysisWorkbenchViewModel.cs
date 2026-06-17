@@ -76,6 +76,12 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     [ObservableProperty]
     private string? _globalTimeRangeSummary;
 
+    [ObservableProperty]
+    private double? _globalHighlightStartSec;
+
+    [ObservableProperty]
+    private double? _globalHighlightEndSec;
+
     public bool CanEditParameters => SelectedStep?.HasParameters == true;
 
     public bool ShowNoParametersMessage => SelectedStep != null && !SelectedStep.HasParameters;
@@ -107,6 +113,28 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         UpdateGlobalTimeRangeSummary();
     }
 
+    public void SetGlobalTimeRangeFromWaveform(double startSec, double endSec)
+    {
+        if (_channelDurationSec <= 0)
+            return;
+
+        var validation = Analysis.AnalysisTimeRangeResolver.Validate(
+            startSec,
+            endSec,
+            _channelDurationSec,
+            "全局分析时段");
+        if (validation != null)
+        {
+            StatusMessage = validation;
+            return;
+        }
+
+        var range = Analysis.AnalysisTimeRangeResolver.ResolveGlobal(startSec, endSec, _channelDurationSec);
+        GlobalStartTimeSec = range.StartSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+        GlobalEndTimeSec = range.EndSec?.ToString("G", System.Globalization.CultureInfo.InvariantCulture) ?? "0";
+        StatusMessage = $"已同步全局分析时段：{range.FormatSummary(_channelDurationSec)}";
+    }
+
     partial void OnGlobalStartTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
 
     partial void OnGlobalEndTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
@@ -116,12 +144,16 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         if (_channelDurationSec <= 0)
         {
             GlobalTimeRangeSummary = null;
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
             return;
         }
 
         if (!TryParseGlobalTimeRange(out var start, out var end))
         {
             GlobalTimeRangeSummary = "全局时段格式无效";
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
             return;
         }
 
@@ -129,6 +161,17 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         GlobalTimeRangeSummary = range.IsFullSegment(_channelDurationSec)
             ? $"全局分析时段：全长 {_channelDurationSec:F3} s"
             : $"全局分析时段：{range.FormatSummary(_channelDurationSec)}";
+
+        if (range.IsFullSegment(_channelDurationSec))
+        {
+            GlobalHighlightStartSec = null;
+            GlobalHighlightEndSec = null;
+        }
+        else
+        {
+            GlobalHighlightStartSec = range.StartSec;
+            GlobalHighlightEndSec = range.ResolveEndSec(_channelDurationSec);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunAnalysis))]
