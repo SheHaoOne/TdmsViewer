@@ -7,17 +7,6 @@ namespace TdmsViewer.Controls;
 
 public partial class HeatmapChartCard : UserControl
 {
-    private static readonly Color[] Colormap =
-    [
-        Color.FromHex("#002589"),
-        Color.FromHex("#0025fe"),
-        Color.FromHex("#00bcfe"),
-        Color.FromHex("#00bc6f"),
-        Color.FromHex("#e5f111"),
-        Color.FromHex("#f47f00"),
-        Color.FromHex("#fb3232")
-    ];
-
     public static readonly DependencyProperty ModelProperty =
         DependencyProperty.Register(
             nameof(Model),
@@ -65,7 +54,7 @@ public partial class HeatmapChartCard : UserControl
             Model.XAxis[^1],
             Model.YAxis[0],
             Model.YAxis[^1]);
-        heatmap.Colormap = new ScottPlot.Colormaps.CustomPalette(Colormap);
+        heatmap.Colormap = new ScottPlot.Colormaps.Turbo();
 
         if (Model.ColorMin is double min && Model.ColorMax is double max)
             heatmap.ManualRange = new ScottPlot.Range(min, max);
