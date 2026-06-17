@@ -21,6 +21,8 @@ public partial class HeatmapChartCard : UserControl
     private ColorBarDragTarget _dragTarget;
     private double _dragMin;
     private double _dragMax;
+    private double _referenceMin;
+    private double _referenceMax;
 
     public static readonly DependencyProperty ViewModelProperty =
         DependencyProperty.Register(
@@ -100,6 +102,8 @@ public partial class HeatmapChartCard : UserControl
         if (_dragTarget == ColorBarDragTarget.None)
             return;
 
+        _referenceMin = _dragMin;
+        _referenceMax = _dragMax;
         _isColorBarDragging = true;
         PlotHost.CaptureMouse();
         PlotHost.Cursor = Cursors.SizeNS;
@@ -121,7 +125,7 @@ public partial class HeatmapChartCard : UserControl
             return;
 
         var minSpan = GetMinimumColorSpan(ViewModel);
-        var candidate = PixelYToColorValue(colorBarRect, pixel.Y, _dragMin, _dragMax);
+        var candidate = PixelYToColorValue(colorBarRect, pixel.Y, _referenceMin, _referenceMax, clampToBar: false);
 
         if (_dragTarget == ColorBarDragTarget.Min)
             _dragMin = Math.Min(candidate, _dragMax - minSpan);
@@ -171,10 +175,12 @@ public partial class HeatmapChartCard : UserControl
         return ColorBarDragTarget.None;
     }
 
-    private static double PixelYToColorValue(PixelRect rect, float pixelY, double colorMin, double colorMax)
+    private static double PixelYToColorValue(PixelRect rect, float pixelY, double colorMin, double colorMax, bool clampToBar = true)
     {
         var t = (rect.Bottom - pixelY) / rect.Height;
-        t = Math.Clamp(t, 0f, 1f);
+        if (clampToBar)
+            t = Math.Clamp(t, 0f, 1f);
+
         return colorMin + t * (colorMax - colorMin);
     }
 
