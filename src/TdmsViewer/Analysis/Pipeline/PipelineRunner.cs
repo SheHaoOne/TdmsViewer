@@ -36,7 +36,8 @@ public sealed class PipelineRunner
             SampleRateHz = input.SampleRateHz,
             Sources = input.Sources,
             Data = input.Data,
-            GlobalTimeRange = plan.GlobalTimeRange
+            GlobalTimeRange = plan.GlobalTimeRange,
+            GlobalHeatmapColorRange = plan.GlobalHeatmapColorRange
         };
 
         var maxDurationSec = input.Sources.Count == 0

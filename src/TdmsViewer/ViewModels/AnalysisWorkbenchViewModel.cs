@@ -4,6 +4,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis;
 using TdmsViewer.Analysis.Contracts;
 using TdmsViewer.Analysis.Pipeline;
 using TdmsViewer.Analysis.Reporting;
@@ -82,6 +83,18 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     [ObservableProperty]
     private double? _globalHighlightEndSec;
 
+    [ObservableProperty]
+    private bool _useAutoHeatmapColorRange = true;
+
+    [ObservableProperty]
+    private string _heatmapColorMinText = "-80";
+
+    [ObservableProperty]
+    private string _heatmapColorMaxText = "0";
+
+    [ObservableProperty]
+    private string? _globalHeatmapColorRangeSummary;
+
     public bool CanEditParameters => SelectedStep?.HasParameters == true;
 
     public bool ShowNoParametersMessage => SelectedStep != null && !SelectedStep.HasParameters;
@@ -138,6 +151,29 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
     partial void OnGlobalStartTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
 
     partial void OnGlobalEndTimeSecChanged(string value) => UpdateGlobalTimeRangeSummary();
+
+    partial void OnUseAutoHeatmapColorRangeChanged(bool value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    partial void OnHeatmapColorMinTextChanged(string value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    partial void OnHeatmapColorMaxTextChanged(string value) => UpdateGlobalHeatmapColorRangeSummary();
+
+    private void UpdateGlobalHeatmapColorRangeSummary()
+    {
+        if (UseAutoHeatmapColorRange)
+        {
+            GlobalHeatmapColorRangeSummary = "热力图色阶：自动";
+            return;
+        }
+
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+        {
+            GlobalHeatmapColorRangeSummary = "热力图色阶格式无效";
+            return;
+        }
+
+        GlobalHeatmapColorRangeSummary = HeatmapColorRange.CreateManual(min, max).FormatSummary();
+    }
 
     private void UpdateGlobalTimeRangeSummary()
     {
@@ -196,6 +232,12 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         if (!TryValidateGlobalTimeRange(out var globalValidationError))
         {
             MessageBox.Show(globalValidationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!TryValidateHeatmapColorRange(out var heatmapValidationError))
+        {
+            MessageBox.Show(heatmapValidationError, "参数校验", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -350,6 +392,28 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         return true;
     }
 
+    private bool TryValidateHeatmapColorRange(out string error)
+    {
+        error = string.Empty;
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+        {
+            if (UseAutoHeatmapColorRange)
+                return true;
+
+            error = "热力图色阶：请输入有效数值。";
+            return false;
+        }
+
+        var validation = HeatmapColorRangeResolver.Validate(UseAutoHeatmapColorRange, min, max);
+        if (validation != null)
+        {
+            error = validation;
+            return false;
+        }
+
+        return true;
+    }
+
     private bool TryParseGlobalTimeRange(out double startSec, out double endSec)
     {
         startSec = 0;
@@ -371,6 +435,14 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             return null;
 
         return Analysis.AnalysisTimeRangeResolver.ResolveGlobal(start, end, _channelDurationSec);
+    }
+
+    private HeatmapColorRange? BuildHeatmapColorRange()
+    {
+        if (!HeatmapColorRangeResolver.TryParse(HeatmapColorMinText, HeatmapColorMaxText, out var min, out var max))
+            return null;
+
+        return HeatmapColorRangeResolver.Resolve(UseAutoHeatmapColorRange, min, max);
     }
 
     private bool CanRunAnalysis() => !IsRunning && _canAnalyze();
@@ -405,6 +477,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
         {
             Name = PlanName,
             GlobalTimeRange = BuildGlobalTimeRange(),
+            GlobalHeatmapColorRange = BuildHeatmapColorRange(),
             Steps = steps
         };
     }
@@ -431,6 +504,19 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             ? endSec.ToString("G", System.Globalization.CultureInfo.InvariantCulture)
             : "0";
 
+        if (plan.GlobalHeatmapColorRange is { UseAuto: false } colorRange)
+        {
+            UseAutoHeatmapColorRange = false;
+            HeatmapColorMinText = colorRange.Min.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+            HeatmapColorMaxText = colorRange.Max.ToString("G", System.Globalization.CultureInfo.InvariantCulture);
+        }
+        else
+        {
+            UseAutoHeatmapColorRange = true;
+            HeatmapColorMinText = "-80";
+            HeatmapColorMaxText = "0";
+        }
+
         foreach (var item in AvailableSteps)
         {
             var match = plan.Steps.FirstOrDefault(s =>
@@ -443,6 +529,7 @@ public sealed partial class AnalysisWorkbenchViewModel : ObservableObject
             SelectedStep = AvailableSteps.FirstOrDefault(s => s.HasParameters) ?? AvailableSteps.FirstOrDefault();
 
         UpdateGlobalTimeRangeSummary();
+        UpdateGlobalHeatmapColorRangeSummary();
     }
 
     private static string SanitizeFileName(string name)

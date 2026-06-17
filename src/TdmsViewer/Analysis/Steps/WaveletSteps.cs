@@ -60,7 +60,8 @@ public sealed class MorletWaveletStep : IAnalysisStep
                 timeAxis,
                 frequencyAxis,
                 source.FilePath,
-                useLogFrequencyAxis));
+                useLogFrequencyAxis,
+                input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);
@@ -129,7 +130,8 @@ public sealed class LmsMorletWaveletStep : IAnalysisStep
                 timeAxis,
                 frequencyAxis,
                 source.FilePath,
-                useLogFrequencyAxis));
+                useLogFrequencyAxis,
+                input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);

@@ -98,7 +98,8 @@ public sealed class TimeVaryingLoudnessStep : IAnalysisStep
                 NvhStepCharts.Transpose(specLoudness),
                 timeAxis,
                 barkAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);
@@ -199,7 +200,8 @@ public sealed class TimeVaryingSharpnessStep : IAnalysisStep
                 NvhStepCharts.Transpose(specSharpness),
                 timeAxis,
                 barkAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);

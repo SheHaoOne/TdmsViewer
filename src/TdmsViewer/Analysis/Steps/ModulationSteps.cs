@@ -56,7 +56,8 @@ public sealed class ModulationSpectrumStep : IAnalysisStep
                 spectrogram,
                 timeAxis,
                 freqAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, modulationDepth);
             cards.Add(NvhStepCharts.Line(
@@ -122,7 +123,8 @@ public sealed class ModulationSpectrumStftStep : IAnalysisStep
                 spectrogram,
                 timeAxis,
                 freqAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
 
             var (txs, tys) = PlotDataHelper.DownsampleXY(timeAxis, modulationDepth);
             cards.Add(NvhStepCharts.Line(

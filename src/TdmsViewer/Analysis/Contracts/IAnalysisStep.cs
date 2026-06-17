@@ -13,6 +13,7 @@ public sealed class AnalysisInputContext
     public required IReadOnlyList<AnalysisSourceSample> Sources { get; init; }
     public IAnalysisDataAccessor? Data { get; init; }
     public AnalysisTimeRange? GlobalTimeRange { get; init; }
+    public HeatmapColorRange? GlobalHeatmapColorRange { get; init; }
 }
 
 public sealed class StepDefinition

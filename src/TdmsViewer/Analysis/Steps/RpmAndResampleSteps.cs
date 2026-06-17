@@ -166,7 +166,8 @@ public sealed class RpmFrequencyMapStep : IAnalysisStep
                 data,
                 rpmAxis,
                 frequencyAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);
@@ -232,7 +233,8 @@ public sealed class RpmOrderMapStep : IAnalysisStep
                 data,
                 rpmAxis,
                 orderAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);

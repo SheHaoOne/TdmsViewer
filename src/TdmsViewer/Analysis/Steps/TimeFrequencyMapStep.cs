@@ -58,7 +58,8 @@ public sealed class TimeFrequencyMapStep : IAnalysisStep
                 downsampled,
                 xs,
                 frequencyAxis,
-                source.FilePath));
+                source.FilePath,
+                colorRange: input.GlobalHeatmapColorRange));
         }
 
         return Task.FromResult<IReadOnlyList<ChartCardModel>>(cards);

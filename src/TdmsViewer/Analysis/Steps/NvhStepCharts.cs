@@ -41,8 +41,19 @@ internal static class NvhStepCharts
         double[] xAxis,
         double[] yAxis,
         string? sourceKey = null,
-        bool useLogYAxis = false) =>
-        new(id, title, xLabel, yLabel, values, xAxis, yAxis, sourceKey, UseLogYAxis: useLogYAxis);
+        bool useLogYAxis = false,
+        HeatmapColorRange? colorRange = null)
+    {
+        double? colorMin = null;
+        double? colorMax = null;
+        if (colorRange is { UseAuto: false })
+        {
+            colorMin = colorRange.Min;
+            colorMax = colorRange.Max;
+        }
+
+        return new(id, title, xLabel, yLabel, values, xAxis, yAxis, sourceKey, colorMin, colorMax, useLogYAxis);
+    }
 
     public static MetricCardModel Metric(
         string id,

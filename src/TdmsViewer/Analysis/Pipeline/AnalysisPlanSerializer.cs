@@ -10,6 +10,7 @@ public sealed class AnalysisPlanDocument
 {
     public string Name { get; set; } = "快速声学检查";
     public AnalysisTimeRangeDocument? GlobalTimeRange { get; set; }
+    public HeatmapColorRangeDocument? GlobalHeatmapColorRange { get; set; }
     public List<AnalysisPlanStepDocument> Steps { get; set; } = new();
 }
 
@@ -17,6 +18,13 @@ public sealed class AnalysisTimeRangeDocument
 {
     public double StartSec { get; set; }
     public double? EndSec { get; set; }
+}
+
+public sealed class HeatmapColorRangeDocument
+{
+    public bool UseAuto { get; set; } = true;
+    public double Min { get; set; }
+    public double Max { get; set; }
 }
 
 public sealed class AnalysisPlanStepDocument
@@ -62,6 +70,14 @@ public static class AnalysisPlanSerializer
                 StartSec = plan.GlobalTimeRange.StartSec,
                 EndSec = plan.GlobalTimeRange.EndSec
             },
+        GlobalHeatmapColorRange = plan.GlobalHeatmapColorRange == null
+            ? null
+            : new HeatmapColorRangeDocument
+            {
+                UseAuto = plan.GlobalHeatmapColorRange.UseAuto,
+                Min = plan.GlobalHeatmapColorRange.Min,
+                Max = plan.GlobalHeatmapColorRange.Max
+            },
         Steps = plan.Steps.Select(step => new AnalysisPlanStepDocument
         {
             Id = step.Id,
@@ -84,6 +100,14 @@ public static class AnalysisPlanSerializer
             {
                 StartSec = document.GlobalTimeRange.StartSec,
                 EndSec = document.GlobalTimeRange.EndSec
+            },
+        GlobalHeatmapColorRange = document.GlobalHeatmapColorRange == null
+            ? null
+            : new HeatmapColorRange
+            {
+                UseAuto = document.GlobalHeatmapColorRange.UseAuto,
+                Min = document.GlobalHeatmapColorRange.Min,
+                Max = document.GlobalHeatmapColorRange.Max
             },
         Steps = document.Steps.Select(step => new AnalysisPlanStep
         {
