@@ -243,7 +243,7 @@ public partial class HeatmapChartCard : UserControl
 
         if (viewModel.Is3DView)
         {
-            RedrawSurface3D(model, viewModel);
+            _ = RenderSurface3DAsync(model, viewModel);
             return;
         }
 
@@ -302,7 +302,7 @@ public partial class HeatmapChartCard : UserControl
         }
     }
 
-    private void RedrawSurface3D(HeatmapChartModel model, HeatmapChartViewModel viewModel)
+    private async Task RenderSurface3DAsync(HeatmapChartModel model, HeatmapChartViewModel viewModel)
     {
         _heatmap = null;
 
@@ -312,7 +312,14 @@ public partial class HeatmapChartCard : UserControl
             colorMax = viewModel.DataMax;
         }
 
-        SurfaceHost.Render(model, colorMin, colorMax);
+        try
+        {
+            await SurfaceHost.RenderAsync(model, colorMin, colorMax).ConfigureAwait(true);
+        }
+        catch
+        {
+            // WebView2 runtime may be unavailable on the host machine.
+        }
     }
 
     private static void RemoveColorBarPanels(Plot plot)

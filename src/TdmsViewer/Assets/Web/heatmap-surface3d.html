@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heatmap Surface 3D</title>
+    <script src="lib/echarts.min.js"></script>
+    <script src="lib/echarts-gl.min.js"></script>
+    <style>
+        html, body, #chart {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: #f5f5f7;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart"></div>
+    <script>
+        const chart = echarts.init(document.getElementById('chart'));
+
+        function formatFrequency(hz) {
+            if (!isFinite(hz) || hz <= 0) {
+                return '';
+            }
+            return hz >= 1000 ? (hz / 1000).toFixed(1) + 'k' : hz.toFixed(0);
+        }
+
+        window.renderHeatmapSurface = function (payload) {
+            const yAxisLabelFormatter = payload.useLogYAxis
+                ? function (value) { return formatFrequency(Math.pow(10, value)); }
+                : undefined;
+
+            const option = {
+                backgroundColor: '#f5f5f7',
+                tooltip: {
+                    formatter: function (params) {
+                        const x = params.value[0];
+                        const y = payload.useLogYAxis
+                            ? Math.pow(10, params.value[1])
+                            : params.value[1];
+                        const z = params.value[2];
+                        return payload.xLabel + ': ' + x.toPrecision(4)
+                            + '<br/>' + payload.yLabel + ': ' + formatFrequency(y) + ' Hz'
+                            + '<br/>' + payload.zLabel + ': ' + z.toPrecision(4);
+                    }
+                },
+                visualMap: {
+                    show: true,
+                    dimension: 2,
+                    min: payload.colorMin,
+                    max: payload.colorMax,
+                    calculable: false,
+                    orient: 'vertical',
+                    right: 8,
+                    top: 'center',
+                    textStyle: { color: '#1d1d1f', fontSize: 11 },
+                    inRange: {
+                        color: [
+                            '#30123b', '#4145ab', '#4777ef', '#2ec7f7',
+                            '#72f58e', '#c8ef3a', '#fee838', '#fca50a', '#ef4e14'
+                        ]
+                    }
+                },
+                xAxis3D: {
+                    type: 'value',
+                    name: payload.xLabel,
+                    nameTextStyle: { color: '#86868b', fontSize: 11 },
+                    axisLabel: { color: '#86868b', fontSize: 10 }
+                },
+                yAxis3D: {
+                    type: 'value',
+                    name: payload.yLabel,
+                    nameTextStyle: { color: '#86868b', fontSize: 11 },
+                    axisLabel: {
+                        color: '#86868b',
+                        fontSize: 10,
+                        formatter: yAxisLabelFormatter
+                    }
+                },
+                zAxis3D: {
+                    type: 'value',
+                    name: payload.zLabel,
+                    nameTextStyle: { color: '#86868b', fontSize: 11 },
+                    axisLabel: { color: '#86868b', fontSize: 10 }
+                },
+                grid3D: {
+                    boxWidth: 120,
+                    boxDepth: 90,
+                    boxHeight: 70,
+                    viewControl: {
+                        projection: 'perspective',
+                        autoRotate: false,
+                        distance: 180,
+                        alpha: 28,
+                        beta: 38,
+                        minDistance: 80,
+                        maxDistance: 320
+                    },
+                    light: {
+                        main: { intensity: 1.1, shadow: false },
+                        ambient: { intensity: 0.45 }
+                    }
+                },
+                series: [{
+                    type: 'surface',
+                    wireframe: { show: false },
+                    shading: 'color',
+                    data: payload.data
+                }]
+            };
+
+            chart.setOption(option, true);
+            chart.resize();
+        };
+
+        window.addEventListener('resize', function () {
+            chart.resize();
+        });
+    </script>
+</body>
+</html>

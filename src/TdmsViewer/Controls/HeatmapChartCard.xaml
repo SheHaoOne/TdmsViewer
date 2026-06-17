@@ -96,7 +96,7 @@
                        TextWrapping="Wrap"
                        Visibility="{Binding Is2DView, Converter={StaticResource BoolVis}}"/>
             <TextBlock Grid.Row="4"
-                       Text="三维视图：X 为横轴，Z 为纵轴，高度为幅值；拖拽旋转，滚轮缩放。"
+                       Text="三维视图（ECharts）：拖拽旋转视角，滚轮缩放；色阶与二维视图同步。"
                        Style="{StaticResource MacSecondaryStyle}"
                        Margin="0,0,0,8"
                        TextWrapping="Wrap"
@@ -107,7 +107,7 @@
                 <Grid>
                     <ScottPlot:WpfPlot x:Name="PlotHost"
                                        Visibility="{Binding Is2DView, Converter={StaticResource BoolVis}}"/>
-                    <controls:HeatmapSurface3DView x:Name="SurfaceHost"
+                    <controls:HeatmapECharts3DView x:Name="SurfaceHost"
                                                    Visibility="{Binding Is3DView, Converter={StaticResource BoolVis}}"/>
                 </Grid>
             </Border>
