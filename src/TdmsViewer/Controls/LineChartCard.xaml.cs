@@ -95,4 +95,21 @@ public partial class LineChartCard : UserControl
         PlotHost.Plot.Grid.MinorLineColor = Color.FromHex("#D2D2D7").WithAlpha(0.25);
         PlotHost.Plot.Grid.MinorLineWidth = 1;
     }
+
+    internal void ApplyFullscreenLayout()
+    {
+        MinHeight = 0;
+        ChartRow.Height = new GridLength(1, GridUnitType.Star);
+    }
+
+    private void FullscreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (Model == null)
+            return;
+
+        ChartFullscreenService.Show(
+            this,
+            () => new LineChartCard { Model = Model },
+            Model.Title);
+    }
 }

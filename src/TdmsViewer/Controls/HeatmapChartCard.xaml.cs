@@ -351,4 +351,22 @@ public partial class HeatmapChartCard : UserControl
         Min,
         Max
     }
+
+    internal void ApplyFullscreenLayout()
+    {
+        MinHeight = 0;
+        ChartRow.Height = new GridLength(1, GridUnitType.Star);
+    }
+
+    private void FullscreenButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        var viewModel = ViewModel;
+        ChartFullscreenService.Show(
+            this,
+            () => new HeatmapChartCard { ViewModel = viewModel },
+            viewModel.Title);
+    }
 }

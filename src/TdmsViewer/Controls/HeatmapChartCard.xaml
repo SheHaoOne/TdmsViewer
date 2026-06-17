@@ -18,7 +18,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="280"/>
+                <RowDefinition x:Name="ChartRow" Height="280"/>
             </Grid.RowDefinitions>
             <Grid Grid.Row="0" Margin="0,0,0,8">
                 <Grid.ColumnDefinitions>
@@ -42,7 +42,14 @@
                     <RadioButton Content="三维"
                                  GroupName="HeatmapViewMode"
                                  IsChecked="{Binding Is3DView, Mode=TwoWay}"
-                                 VerticalAlignment="Center"/>
+                                 VerticalAlignment="Center"
+                                 Margin="0,0,10,0"/>
+                    <Button Content="全屏"
+                            Style="{StaticResource MacToolbarButtonStyle}"
+                            Padding="10,4"
+                            Margin="0"
+                            Click="FullscreenButton_Click"
+                            ToolTip="全屏查看"/>
                 </StackPanel>
             </Grid>
             <Grid Grid.Row="1" Margin="0,0,0,6">

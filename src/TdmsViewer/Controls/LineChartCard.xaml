@@ -8,11 +8,24 @@
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="280"/>
+                <RowDefinition x:Name="ChartRow" Height="280"/>
             </Grid.RowDefinitions>
-            <TextBlock Text="{Binding Title}"
-                       Style="{StaticResource MacCaptionStyle}"
-                       Margin="0,0,0,8"/>
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource MacCaptionStyle}"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Content="全屏"
+                        Style="{StaticResource MacToolbarButtonStyle}"
+                        Padding="10,4"
+                        Margin="0"
+                        Click="FullscreenButton_Click"
+                        ToolTip="全屏查看"/>
+            </Grid>
             <Border Grid.Row="1"
                     CornerRadius="8"
                     ClipToBounds="True">

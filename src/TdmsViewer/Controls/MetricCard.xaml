@@ -4,21 +4,44 @@
              MinHeight="120"
              Margin="0">
     <Border Style="{StaticResource MacCardStyle}" Padding="16" Margin="0">
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="{Binding Title}"
-                       Style="{StaticResource MacCaptionStyle}"
-                       Margin="0,0,0,8"/>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="{Binding Value}"
-                           FontSize="28"
-                           FontWeight="SemiBold"
-                           Foreground="#FF1D1D1F"
-                           VerticalAlignment="Bottom"/>
-                <TextBlock Text="{Binding Unit}"
-                           Style="{StaticResource MacSecondaryStyle}"
-                           Margin="8,0,0,4"
-                           VerticalAlignment="Bottom"/>
+        <Grid x:Name="ContentRoot">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition x:Name="ValueRow" Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}"
+                           Style="{StaticResource MacCaptionStyle}"
+                           VerticalAlignment="Center"/>
+                <Button Grid.Column="1"
+                        Content="全屏"
+                        Style="{StaticResource MacToolbarButtonStyle}"
+                        Padding="10,4"
+                        Margin="0"
+                        Click="FullscreenButton_Click"
+                        ToolTip="全屏查看"/>
+            </Grid>
+            <StackPanel Grid.Row="1"
+                        x:Name="ValuePanel"
+                        VerticalAlignment="Center">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <TextBlock x:Name="ValueText"
+                               Text="{Binding Value}"
+                               FontSize="28"
+                               FontWeight="SemiBold"
+                               Foreground="#FF1D1D1F"
+                               VerticalAlignment="Bottom"/>
+                    <TextBlock x:Name="UnitText"
+                               Text="{Binding Unit}"
+                               Style="{StaticResource MacSecondaryStyle}"
+                               Margin="8,0,0,4"
+                               VerticalAlignment="Bottom"/>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Border>
 </UserControl>
