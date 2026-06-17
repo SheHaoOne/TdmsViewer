@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using ScottPlot;
+using ScottPlot.Panels;
 using ScottPlot.TickGenerators;
 using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.ViewModels;
@@ -46,7 +47,9 @@ public partial class HeatmapChartCard : UserControl
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(HeatmapChartViewModel.RenderModel)
-            or nameof(HeatmapChartViewModel.UseAutoColorRange))
+            or nameof(HeatmapChartViewModel.UseAutoColorRange)
+            or nameof(HeatmapChartViewModel.ColorMinText)
+            or nameof(HeatmapChartViewModel.ColorMaxText))
         {
             Redraw();
         }
@@ -62,6 +65,7 @@ public partial class HeatmapChartCard : UserControl
             return;
 
         PlotHost.Plot.Clear();
+        RemoveColorBarPanels(PlotHost.Plot);
         ScottPlotStyle.ApplyMacTheme(PlotHost.Plot);
 
         if (model.XAxis.Length < 2 || model.YAxis.Length < 2)
@@ -103,6 +107,12 @@ public partial class HeatmapChartCard : UserControl
         PlotHost.Plot.Axes.Left.Label.Text = model.YLabel;
         PlotHost.Plot.Axes.AutoScale();
         PlotHost.Refresh();
+    }
+
+    private static void RemoveColorBarPanels(Plot plot)
+    {
+        foreach (var panel in plot.Axes.GetPanels().OfType<ColorBar>().ToList())
+            plot.Axes.Remove(panel);
     }
 
     private void ConfigureLogYAxisFromCenters(IReadOnlyList<double> centerFrequenciesHz)
