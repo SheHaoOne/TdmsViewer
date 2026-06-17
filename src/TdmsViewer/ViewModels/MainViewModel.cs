@@ -5,6 +5,8 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using TdmsViewer.Analysis.Contracts;
+using TdmsViewer.Analysis.Reporting;
 using TdmsViewer.Models;
 using TdmsViewer.Services;
 
@@ -66,9 +68,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _isFileAssociationRegistered;
 
+    [ObservableProperty]
+    private AppViewMode _currentViewMode = AppViewMode.Viewer;
+
     /// <summary>全选复选框：勾选则全部参与波形叠加，取消则全部不叠加。</summary>
     [ObservableProperty]
     private bool _isAllFilesOverlayChecked = true;
+
+    public AnalysisWorkbenchViewModel Workbench { get; }
+    public AnalysisReportViewModel Report { get; }
 
     public string PageInfo => TotalPages <= 0 ? "—" : $"第 {CurrentPage + 1} / {TotalPages} 页";
 
@@ -99,12 +107,29 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         IsFileAssociationRegistered = FileAssociationService.IsRegistered();
         _audioService.PlaybackStopped += (_, _) => IsPlaying = false;
+
+        Report = new AnalysisReportViewModel();
+        Workbench = new AnalysisWorkbenchViewModel(
+            LoadAnalysisInputAsync,
+            CanAnalyze,
+            OnAnalysisReportReady);
+
+        NvhLicenseService.TryLoad();
+        RefreshAnalysisContext();
     }
 
     partial void OnSelectedChannelChanged(MergedChannelInfo? value)
     {
         if (value != null)
             _ = LoadMergedChannelAsync(value);
+
+        RefreshAnalysisContext();
+    }
+
+    partial void OnCurrentViewModeChanged(AppViewMode value)
+    {
+        if (value == AppViewMode.Analysis)
+            RefreshAnalysisContext();
     }
 
     partial void OnActiveFileChanged(TdmsFileListItem? value)
@@ -578,6 +603,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             RefreshPage();
 
             StatusMessage = $"数据：{source.FileName} — {TotalSamples:N0} 个采样点";
+            RefreshAnalysisContext();
         }
         catch (Exception ex)
         {
@@ -589,6 +615,170 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 IsBusy = false;
         }
     }
+
+    [RelayCommand]
+    private void OpenAnalysis()
+    {
+        if (!HasFile || SelectedChannel == null)
+        {
+            MessageBox.Show("请先导入文件并选择通道。", "数据分析", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        RefreshAnalysisContext();
+        CurrentViewMode = AppViewMode.Analysis;
+        StatusMessage = "数据分析模式";
+    }
+
+    [RelayCommand]
+    private void ShowViewer()
+    {
+        CurrentViewMode = AppViewMode.Viewer;
+        StatusMessage = SelectedChannel == null
+            ? "请批量导入 TDMS 文件进行对比"
+            : $"通道 {SelectedChannel.DisplayName}";
+    }
+
+    [RelayCommand]
+    private void ShowReport()
+    {
+        if (Report.Cards.Count == 0)
+        {
+            MessageBox.Show("请先运行分析。", "分析报表", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        CurrentViewMode = AppViewMode.Report;
+        StatusMessage = "分析报表";
+    }
+
+    private void OnAnalysisReportReady(AnalysisReportModel report)
+    {
+        Report.SetReport(report);
+        CurrentViewMode = AppViewMode.Report;
+        StatusMessage = $"分析完成：{report.Cards.Count} 张图表";
+    }
+
+    private void RefreshAnalysisContext()
+    {
+        Workbench.RefreshChannelSummary(DescribeAnalysisTarget());
+        Workbench.NotifyCanAnalyzeChanged();
+    }
+
+    private bool CanAnalyze() => DescribeAnalysisTarget() != null;
+
+    private AnalysisTargetDescription? DescribeAnalysisTarget()
+    {
+        var sources = GetAllAnalysisSources();
+        if (sources.Count == 0)
+            return null;
+
+        var maxSampleCount = 0;
+        double? sampleRate = null;
+        foreach (var source in sources)
+        {
+            var sampleCount = GetKnownSampleCount(source);
+            if (sampleCount <= 0)
+                return null;
+
+            maxSampleCount = Math.Max(maxSampleCount, sampleCount);
+            sampleRate ??= source.Channel.SampleRateHz ?? 44100;
+        }
+
+        var channelName = SelectedChannel?.ChannelName ?? sources[0].Channel.ChannelName;
+        return new AnalysisTargetDescription
+        {
+            FileName = FormatAnalysisTargetLabel(sources, channelName),
+            GroupName = sources[0].Channel.GroupName,
+            ChannelName = channelName,
+            SampleRateHz = sampleRate ?? 44100,
+            SampleCount = maxSampleCount,
+            SourceCount = sources.Count
+        };
+    }
+
+    private async Task<AnalysisInputContext?> LoadAnalysisInputAsync() =>
+        await Task.Run(BuildAnalysisInput);
+
+    private IReadOnlyList<ChannelSourceRef> GetAllAnalysisSources()
+    {
+        if (SelectedChannel == null)
+            return Array.Empty<ChannelSourceRef>();
+
+        return SelectedChannel.Sources.ToList();
+    }
+
+    private int GetKnownSampleCount(ChannelSourceRef source)
+    {
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
+            return _currentChannelData.Length;
+
+        return source.Channel.SampleCount > int.MaxValue
+            ? int.MaxValue
+            : (int)source.Channel.SampleCount;
+    }
+
+    private AnalysisInputContext? BuildAnalysisInput()
+    {
+        var sources = GetAllAnalysisSources();
+        if (sources.Count == 0)
+            return null;
+
+        var samples = new List<AnalysisSourceSample>(sources.Count);
+        foreach (var source in sources)
+        {
+            var data = ReadSourceSamples(source);
+            if (data == null || data.Length == 0)
+                continue;
+
+            samples.Add(new AnalysisSourceSample
+            {
+                FilePath = source.FilePath,
+                FileName = source.FileName,
+                GroupName = source.Channel.GroupName,
+                ChannelName = source.Channel.ChannelName,
+                Samples = data,
+                SampleRateHz = source.Channel.SampleRateHz ?? 44100,
+                Label = source.FileName,
+                Color = GetPlotColorForFile(source.FilePath)
+            });
+        }
+
+        if (samples.Count == 0)
+            return null;
+
+        var primary = samples[0];
+        return new AnalysisInputContext
+        {
+            FilePath = primary.FilePath,
+            FileName = FormatAnalysisTargetLabel(sources, primary.ChannelName),
+            GroupName = primary.GroupName,
+            ChannelName = primary.ChannelName,
+            Samples = primary.Samples,
+            SampleRateHz = primary.SampleRateHz,
+            Sources = samples
+        };
+    }
+
+    private double[]? ReadSourceSamples(ChannelSourceRef source)
+    {
+        if (_currentChannelData != null && _activeSource != null && IsSameSource(_activeSource, source))
+            return _currentChannelData.ToArray();
+
+        try
+        {
+            return _tdmsService.ReadChannelData(source.FilePath, source.Channel);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string FormatAnalysisTargetLabel(IReadOnlyList<ChannelSourceRef> sources, string channelName) =>
+        sources.Count <= 1
+            ? sources[0].FileName
+            : $"{channelName}（{sources.Count} 个文件叠加）";
 
     private void RefreshGroupsForActiveFile(TdmsFileListItem? file)
     {

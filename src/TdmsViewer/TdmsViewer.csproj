@@ -7,10 +7,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>TdmsViewer</AssemblyName>
     <RootNamespace>TdmsViewer</RootNamespace>
     <Version>1.0.0</Version>
-    <Description>TDMS 文件查看器 — 通道属性、波形、数据分页与音频播放</Description>
+    <Description>TDMS 文件查看器 — 通道属性、波形、数据分页、音频播放与 NVH 分析</Description>
     <Authors>TdmsViewer</Authors>
     <ApplicationIcon>Assets\app-icon.ico</ApplicationIcon>
   </PropertyGroup>
@@ -20,6 +21,10 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
     <PackageReference Include="ScottPlot.WPF" Version="5.0.55" />
     <PackageReference Include="TDMSReader" Version="3.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\libs\NvhLibCSharp\NvhLibCSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

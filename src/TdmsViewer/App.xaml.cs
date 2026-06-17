@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using TdmsViewer.Controls;
 using TdmsViewer.ViewModels;
 using TdmsViewer.Views;
 
@@ -11,6 +12,8 @@ public partial class App : Application
 
     private void Application_Startup(object sender, StartupEventArgs e)
     {
+        ScottPlotFontSetup.EnsureInitialized();
+
         _mainViewModel = new MainViewModel();
         var window = new MainWindow { DataContext = _mainViewModel };
         MainWindow = window;
